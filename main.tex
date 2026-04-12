@@ -1,0 +1,1059 @@
+\documentclass[11pt,a4paper]{report}
+% ============================================================================
+% PAQUETES
+% Referencias (documentacion oficial):
+% - CTAN (indice general): https://ctan.org/pkg
+% - hyperref manual: https://ctan.org/pkg/hyperref
+% - cleveref manual: https://ctan.org/pkg/cleveref
+% - amsmath guide: https://ctan.org/pkg/amsmath
+% - physics: https://ctan.org/pkg/physics
+% - braket: https://ctan.org/pkg/braket
+% - quantikz: https://ctan.org/pkg/quantikz
+% - qcircuit: https://ctan.org/pkg/qcircuit
+% ============================================================================
+
+% --- Codificacion y lengua ---
+%\usepackage[utf8]{inputenc}          % Entrada UTF-8.
+\usepackage[T1]{fontenc}             % Salida con acentos y caracteres especiales correctos en PDF.
+\usepackage[spanish,es-tabla]{babel} % Reglas tipograficas en espanol ("Tabla" en vez de "Table").
+\usepackage{lmodern} %Mejora fuentes + elimina warnings
+\usepackage{fix-cm} % permite cualquier tamaño de fuente
+\AtBeginDocument{\RenewCommandCopy\qty\SI} %\qty utiliza siunitx para evitar el error
+% --- Maquetacion base ---
+\usepackage{geometry} % Margenes y area util de la pagina.
+\usepackage{setspace} % Control del interlineado (\setstretch, \onehalfspacing...).
+\usepackage{titlesec} % Formato y espaciado de \chapter, \section, \subsection.
+\usepackage{fancyhdr} % Cabeceras y pie de pagina personalizados.
+\usepackage{tocloft}  % Personalizar fuentes y espaciado del TOC/LOF/LOT con \cftXXX.
+
+% --- Graficos, color y flotantes ---
+\usepackage{graphicx} % \includegraphics[width=...]{archivo} para insertar imagenes.
+\usepackage{xcolor}   % \textcolor{color}{texto}, \definecolor, \colorbox.
+\usepackage{caption}  % Controla el estilo de \caption y su aparicion en los indices.
+
+% --- Tablas y listas ---
+\usepackage{array}     % Tipos de columna personalizados en entornos tabular.
+\usepackage{tabularx}  % Tabla de ancho fijo con columna X que se expande: \begin{tabularx}{\textwidth}{lX}.
+\usepackage{booktabs}  % \toprule \midrule \bottomrule (reglas tipograficas de calidad).
+\usepackage{longtable} % Tablas que se extienden por varias paginas.
+\usepackage{enumitem}  % Control fino de itemize/enumerate: margenes, separacion, etiquetas.
+\usepackage{float}
+% --- Hipervinculos ---
+\usepackage{hyperref}  % Hipervinculos internos/externos. Cargar ANTES de cleveref.
+
+% --- Codigo fuente ---
+\usepackage{listings}
+% \begin{lstlisting}[language=Python, caption=..., label=cod:...]  ...  \end{lstlisting}
+% Inline: \lstinline|codigo|
+
+% --- Paquetes cientificos (fisica y computacion cuantica) ---
+\usepackage{amsmath,amssymb,mathtools,bm}
+% Entornos: equation, align, gather, pmatrix, cases.
+% Simbolos: \mathbb{R}, \boldsymbol{v}, \coloneqq, \therefore.
+
+\usepackage{cleveref}
+% \cref{fig:x} -> "figura 1"   \Cref{fig:x} -> "Figura 1"   \cref{fig:x,eq:y} -> "figura 1 y ecuacion 2"
+% Debe cargarse DESPUES de hyperref.
+
+\usepackage{physics}
+% \ket{\psi}  \bra{\phi}  \mel{\phi}{H}{\psi}  \comm{A}{B}  \anticomm{A}{B}
+% \abs{x}  \norm{v}  \pdv{f}{x}  \dv{f}{t}  \tr  \grad  \curl  \div  \laplacian
+
+%\usepackage{braket}
+% Delimitadores auto-escalados: \Ket{\frac{a}{b}}  \Bra{\frac{a}{b}}  \Braket{0|H|1}
+% Los comandos basicos \ket y \bra los provee physics (tienen precedencia).
+
+\usepackage{siunitx}
+% \SI{9.81}{\meter\per\second\squared}  ->  9.81 m s^{-2}
+% \num{1.38e-23}                        ->  1.38 x 10^{-23}   (numero solo)
+% \si{\kilo\gram}                       ->  kg                 (unidad sola)
+
+\usepackage{tensor} %Para tensores: \tensor{A}{^i_j}
+
+% Circuitos cuanticos: carga quantikz si esta instalado, si no usa qcircuit como fallback.
+% Instalar quantikz: tlmgr install quantikz
+\newif\ifhasquantikz
+\IfFileExists{quantikz.sty}{%
+  \hasquantikztrue
+  \usepackage{quantikz}%
+}{%
+  \hasquantikzfalse
+}
+\ifhasquantikz\else
+  \IfFileExists{qcircuit.sty}{\usepackage{qcircuit}}{}
+\fi
+
+% ============================================================================
+% AJUSTES GLOBALES DE MAQUETACION
+% ============================================================================
+\geometry{
+  a4paper,
+  left=3cm,
+  right=3cm,
+  top=4cm,
+  bottom=3.25cm,
+  headheight=38pt,
+  headsep=14pt,
+  footskip=1.25cm
+}
+
+\setstretch{1.1}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=1.3cm,itemsep=2pt,topsep=2pt}
+
+% \TemplateText{} marca el texto de plantilla que debes reemplazar.
+% Actualmente negro (#000000); cambia a #C8102E para rojo institucional UE.
+\definecolor{UEred}{HTML}{000000}
+\newcommand{\TemplateText}[1]{\textcolor{UEred}{#1}}
+
+% ============================================================================
+% FORMATO DE TITULOS
+% ============================================================================
+\titleformat{\chapter}[hang]{\bfseries\fontsize{20pt}{24pt}\selectfont}{Cap\'itulo \thechapter.}{0.5em}{\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{0pt}{24pt}
+
+\titleformat{\section}[hang]{\bfseries\fontsize{14pt}{18pt}\selectfont}{\thesection}{0.6em}{}
+\titlespacing*{\section}{0pt}{12pt}{8pt}
+
+\titleformat{\subsection}[hang]{\bfseries\fontsize{12pt}{15pt}\selectfont}{\thesubsection}{0.6em}{}
+\titlespacing*{\subsection}{0pt}{10pt}{6pt}
+
+% ============================================================================
+% HIPERVINCULOS Y REFERENCIAS
+% ============================================================================
+%---------------BIBLIOGRAFÍA-----------------------------------
+\usepackage[square,numbers]{natbib}
+%\citet{lecun2015deep} -> LeCun et al. (2015)
+%\citep{lecun2015deep} -> (LeCun et al., 2015)
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=black,
+  citecolor=black
+}
+
+% Toda figura/tabla con \caption aparece automaticamente en su indice
+% (\listoffigures y \listoftables). Pon siempre \label DESPUES de \caption.
+\captionsetup[figure]{list=true}
+\captionsetup[table]{list=true}
+
+%--------------COLORES-------------------
+\definecolor{RefCiteGreen}{HTML}{1B8F3A}
+\definecolor{RefFigureBlue}{HTML}{1565C0}
+\definecolor{RefTableRed}{HTML}{C62828}
+\definecolor{RefCodePurple}{HTML}{7B1FA2}
+\definecolor{RefEqOrange}{HTML}{EF6C00}
+
+%----------MACRO BASE--------------------
+\newcommand{\refbox}[2]{%
+  \begingroup
+  \setlength{\fboxsep}{0.6pt}
+  \fcolorbox{#1}{white}{\mbox{#2}}%
+  \endgroup
+}
+%--------------CITAS---------------------
+\newcommand{\citebox}[1]{%
+  \refbox{RefCiteGreen}{\cite{#1}}%
+}
+%----------TABLAS, FIGURAS, CODIGO Y ECUACIONES------------
+\newcommand{\figref}[1]{%
+  \hyperref[#1]{\refbox{RefFigureBlue}{Figura~\ref*{#1}}}%
+}
+\newcommand{\tabref}[1]{%
+  \hyperref[#1]{\refbox{RefTableRed}{Tabla~\ref*{#1}}}%
+}
+\newcommand{\coderef}[1]{%
+  \hyperref[#1]{\refbox{RefCodePurple}{Código~\ref*{#1}}}%
+}
+\newcommand{\eqrefbox}[1]{%
+  \hyperref[#1]{\refbox{RefEqOrange}{Ecuación~\ref*{#1}}}%
+}
+% Imprime TOC sin titulo interno (evita duplicar "Indice general").
+\makeatletter
+\newcommand{\TableOfContentsNoTitle}{\@starttoc{toc}}
+\newcommand{\ListOfFiguresNoTitle}{\@starttoc{lof}}
+\newcommand{\ListOfTablesNoTitle}{\@starttoc{lot}}
+\makeatother
+
+%=======================================================================
+% CONFIGURACION DE CLEVEREF PARA CITAS
+%======================================================================
+
+%-------------------CITAS EN MAYUSCULAS--------------------------------
+%USO: \Crefbox{fig:red} -> Figura 1
+\newcommand{\Crefbox}[1]{%
+  \begingroup
+  \edef\type{\getrefbykeydefault{#1}{type}{}}%
+  \ifstrequal{\type}{figure}{%
+    \hyperref[#1]{\refbox{RefFigureBlue}{\Cref*{#1}}}%
+  }{%
+  \ifstrequal{\type}{table}{%
+    \hyperref[#1]{\refbox{RefTableRed}{\Cref*{#1}}}%
+  }{%
+  \ifstrequal{\type}{equation}{%
+    \hyperref[#1]{\refbox{RefEqOrange}{\Cref*{#1}}}%
+  }{%
+    \Cref{#1}%
+  }}}
+  \endgroup
+}
+
+%-----------------------CITAS EN MINUSCULAS------------------------------
+% USO: \crefbox{fig:red} -> figura 1
+\newcommand{\crefbox}[1]{%
+  \begingroup
+  \edef\type{\getrefbykeydefault{#1}{type}{}}%
+  \ifstrequal{\type}{figure}{%
+    \hyperref[#1]{\refbox{RefFigureBlue}{\cref*{#1}}}%
+  }{%
+  \ifstrequal{\type}{table}{%
+    \hyperref[#1]{\refbox{RefTableRed}{\cref*{#1}}}%
+  }{%
+  \ifstrequal{\type}{equation}{%
+    \hyperref[#1]{\refbox{RefEqOrange}{\cref*{#1}}}%
+  }{%
+    \cref{#1}%
+  }}}
+  \endgroup
+}
+% ============================================================================
+% CABECERA Y PIE
+% ============================================================================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\TemplateText{\small Aplicación de Tensor Networks en Modelos de IA\\Manuel Arenas Sánchez}}
+\fancyhead[R]{\includegraphics[width=3.57cm]{logo_ue.png}}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyfoot[C]{\thepage}
+
+% Redefine 'plain' para que las primeras paginas de cada \chapter
+% tambien muestren cabecera (por defecto report usa plain ahi).
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyhead[L]{\TemplateText{\small Aplicación de Tensor Networks en Modelos de IA\\Manuel Arenas Sánchez}}%
+  \fancyhead[R]{\includegraphics[width=3.57cm]{logo_ue.png}}%
+  \renewcommand{\headrulewidth}{0.4pt}%
+  \fancyfoot[C]{\thepage}%
+}
+\begin{document}
+
+% ============================================================================
+% PORTADA
+% ============================================================================
+\thispagestyle{empty}
+\begin{center}
+  \vspace*{0.0cm}
+  \includegraphics[width=13.34cm]{logo_ue.png}
+
+  \vspace{1.8cm}
+  {\bfseries\fontsize{20pt}{24pt}\selectfont UNIVERSIDAD EUROPEA DE MADRID\par}
+
+  \vspace{0.9cm}
+  {\bfseries\fontsize{16pt}{19pt}\selectfont ESCUELA DE ARQUITECTURA, INGENIER\'IA Y DISE\~NO\par}
+  \vspace{0.7cm}
+  {\bfseries\fontsize{16pt}{19pt}\selectfont \TemplateText{GRADO EN FÍSICA}\par}
+
+  \vspace{0.5cm}
+  {\fontsize{18pt}{22pt}\selectfont TRABAJO FIN DE GRADO\par}
+
+  \vspace{1.2cm}
+  {\bfseries\fontsize{20pt}{24pt}\selectfont \TemplateText{APLICACIÓN DE TENSOR NETWORKS EN MODELOS DE IA PARA CLASIFICACIÓN DE IMÁGENES}\par}
+
+  \vspace{0.9cm}
+  {\bfseries\fontsize{14pt}{17pt}\selectfont \TemplateText{MANUEL ARENAS SÁNCHEZ}\par}
+  {\bfseries\fontsize{14pt}{17pt}\selectfont \TemplateText{Dirigido por}\par}
+  {\bfseries\fontsize{14pt}{17pt}\selectfont \TemplateText{ALEJANDRO MATA ALI}\par}
+  {\bfseries\fontsize{14pt}{17pt}\selectfont \TemplateText{MARÍA FUENCISLA GILSANZ MUÑOZ}\par}
+
+  \vfill
+  {\bfseries\fontsize{14pt}{17pt}\selectfont CURSO \TemplateText{2025-2026}\par}
+\end{center}
+
+\clearpage
+\TemplateText{\textbf{T\'ITULO:} APLICACIÓN DE TENSOR NETWORKS EN MODELOS DE IA PARA CLASIFICACIÓN DE IMÁGENES}
+
+\vspace{0.8cm}
+\TemplateText{\textbf{AUTOR:} MANUEL ARENAS SÁNCHEZ}
+
+\vspace{0.8cm}
+\TemplateText{\textbf{TITULACI\'ON:} GRADO EN FÍSICA}
+
+\vspace{0.8cm}
+\TemplateText{\textbf{DIRECTOR/ES DEL PROYECTO:} ALEJANDRO MATA ALI}\\
+\hspace*{5.5cm}\TemplateText{MARÍA FUENCISLA GILSANZ MUÑOZ}
+
+\vspace{0.8cm}
+\TemplateText{\textbf{FECHA:} MARZO DE 2026}
+
+\clearpage
+
+% ============================================================================
+% BLOQUES PRELIMINARES
+% ============================================================================
+\chapter*{RESUMEN}
+\addcontentsline{toc}{chapter}{RESUMEN}
+ESTO SE ESCRIBE AL FINAL DEL PROYECTO
+
+\chapter*{ABSTRACT}
+\addcontentsline{toc}{chapter}{ABSTRACT}
+Porque se escribe esta parte en ingles??
+
+\TemplateText{Keywords: Palabras clave en inglés}
+
+\chapter*{AGRADECIMIENTOS}
+\addcontentsline{toc}{chapter}{AGRADECIMIENTOS}
+Se escribe al final del proyecto
+
+\clearpage
+\TemplateText{\textbf{Cita - frase célebre / Dedicatoria}}
+
+\TemplateText{Escribiré algo al final del proyecto}
+
+\chapter*{TABLA RESUMEN}
+\addcontentsline{toc}{chapter}{TABLA RESUMEN}
+\TemplateText{[Rellena esta tabla, y borra la opci\'on que no aplica. Si tu proyecto ha tenido tanto desarrollo de producto como investigaci\'on, haz constar ``SI'' en ambos casos]}
+
+\vspace{0.4cm}
+\begingroup
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{|>{\raggedright\arraybackslash}p{0.72\textwidth}|>{\centering\arraybackslash}p{0.22\textwidth}|}
+\hline
+ & \textbf{DATOS} \\
+\hline
+Nombre y apellidos: & Manuel Arenas Sánchez \\
+\hline
+T\'itulo del proyecto: & Aplicacion de Tensor Networks en modelos de IA para clasificación de imágenes\ldots \\
+\hline
+Directores del proyecto: & Alejandro Mata Ali y Maria Fuencisla Gilsanz \\
+\hline
+El proyecto se ha realizado en colaboraci\'on de una empresa o a petici\'on de una empresa: & SI \\
+\hline
+ \begin{tabular}[t]{@{}l@{}}
+ El proyecto ha implementado un producto:\\
+ (esta entrada se puede marcar junto a la siguiente)
+ \end{tabular} &NO \\
+\hline
+ \begin{tabular}[t]{@{}l@{}}
+ El proyecto ha consistido en el desarrollo de una investigaci\'on o\\
+ innovaci\'on:\\
+ (esta entrada se puede marcar junto a la anterior)
+ \end{tabular} & SI \\
+\hline
+Objetivo general del proyecto: & [\ldots una frase\ldots] \\
+\hline
+\end{tabularx}
+\endgroup
+
+% ============================================================================
+% INDICES
+% ============================================================================
+\chapter*{\'Indice}
+
+\TableOfContentsNoTitle
+
+\chapter*{\'Indice de Figuras}
+
+\ListOfFiguresNoTitle
+
+\chapter*{\'Indice de Tablas}
+Todas las tablas incluidas en la memoria deben estar referenciadas para incluir en este \'indice.
+
+\ListOfTablesNoTitle
+
+% ============================================================================
+% CUERPO PRINCIPAL
+% ============================================================================
+\chapter{INTRODUCCIÓN / ESTADO DEL ARTE}
+
+\section{Introducción a Deep Learning}
+
+El término \textit{Deep Learning} nació de la necesidad de dar un nuevo nombre a las redes neuronales. No es más que una red neuronal con múltiples capas de transformación lineal entre la entrada y la salida. Con lo cual es importante entender antes el concepto de redes neuronales.
+
+El origen de redes neuronales se remontan a la primera mitad del siglo XX, cuando los investigadores comenzaron a plantearse la posibilidad de modelar computacionalmente el funcionamiento del cerebro humano. Los primeros modelos fueron propuestos en 1943, pero estas arquitecturas carecían de capacidad de aprendizaje \citebox{schmidhuber2015deep}. Pocos años después, en 1949 Hebb sentó las bases del aprendizaje en redes neuronales. Hebb postuló que, la conexión entre dos neuronas se refuerza cuando ambas se activan simultáneamente, concepto que hoy en día se conoce como la regla de Hebb.
+
+La siguiente década trajo consigo el desarrollo de los primeros modelos entrenables mediante aprendizaje supervisado. Frank Rosenblatt presentó en 1958 el perceptrón, una unidad de procesamiento capaz de aprender a clasificar patrones linealmente separables a partir de ejemplos etiquetados \citebox{schmidhuber2015deep}. Este dispositivo era, en esencia, una neurona artificial con un vector de pesos ajustables mediante un algoritmo de corrección del error, lo que lo convirtió en el primer modelo con capacidad de aprendizaje autónomo. No obstante, la euforia inicial se vio truncada en 1969, cuando Minsky y Papert demostraron matemáticamente que el perceptrón era incapaz de resolver problemas no linealmente separables, lo que provocó una notable desaceleración en la investigación sobre redes neuronales durante la década siguiente \citebox{schmidhuber2015deep}.
+
+La recuperación del campo llegó de la mano de los modelos multicapa y del algoritmo de retropropagación del error. En 1986, Rumelhart, Hinton y Williams, demostraron que las redes de varias capas podían aprender representaciones internas útiles para resolver problemas de mayor complejidad \citebox{schmidhuber2015deep}. Este hito abrió la puerta a las arquitecturas de redes neuronales más sofisticadas, que vendrían décadas después.
+
+Una red neuronal es una estructura computacional formada por un conjunto de unidades de procesamiento simples, denominados neuronas. Éstas están interconectadas mediante pesos sinápticos ajustables, llamados en inglés \textit{weights} y \textit{biases}. Cada neurona recibe una serie de entradas, a las cuales llamaremos \textit{inputs}; se calcula una suma ponderada de las mismas y se les aplican una función de activación --generalmente no lineal-- para producir una salida, la cual llamaremos \textit{output}. El comportamiento de la red, queda determinado por los valores de estos pesos, que son modificados durante el entrenamiento con el objetivo de minimizar una función de error entre los \textit{outputs} y las respuestas esperadas.
+
+Formalizando esta descripción, dada una entrada $\mathbf{x} = (x_1, x_2, \ldots, x_n) \in \mathbb{R}^n$, la operación de una única neurona se expresa como:
+
+\begin{equation} \label{eq: neurona}
+    y = \sigma\left(\sum_{i=1}^{n} w_i x_i + b\right) = \sigma(\mathbf{w}^\top \mathbf{x} + b)
+\end{equation}
+
+donde $\mathbf{w} = (w_1, w_2, \ldots, w_n)$ es el vector de pesos sinápticos, $b$ es el sesgo (\textit{bias}), y $\sigma: \mathbb{R} \to \mathbb{R}$ es la función de activación. El argumento de $\sigma$ es una transformación afín de la entrada: un producto escalar seguido de una traslación. La no linealidad introducida por $\sigma$ es esencial, pues sin ella la composición de múltiples capas lineales se reduciría a una única transformación lineal, independientemente de la profundidad de la red \citebox{schmidhuber2015deep}.
+
+Las funciones de activación más utilizadas en la práctica incluyen la sigmoide $\sigma(z) = 1/(1+e^{-z})$, la tangente hiperbólica $\sigma(z) = \tanh(z)$, y la unidad lineal rectificada (ReLU) $\sigma(z) = \max(0, z)$. La elección de la función de activación tiene consecuencias importantes sobre la dinámica del entrenamiento: funciones como la sigmoide pueden producir gradientes que se desvanecen en redes profundas, mientras que la ReLU mitiga parcialmente este problema \citebox{schmidhuber2015deep}.
+
+Una capa completa de la red consiste en $m$ neuronas que operan en paralelo sobre la misma entrada, produciendo un vector de salida $\mathbf{y} \in \mathbb{R}^m$:
+
+\begin{equation} \label{eq: capa}
+    \mathbf{y} = \sigma(\mathbf{W}\mathbf{x} + \mathbf{b})
+\end{equation}
+
+donde $\mathbf{W} \in \mathbb{R}^{m \times n}$ es la matriz de pesos de la capa y $\mathbf{b} \in \mathbb{R}^m$ el vector de sesgos. Una red neuronal profunda con $L$ capas es la composición de $L$ transformaciones de este tipo:
+
+\begin{equation} \label{eq: red_profunda}
+    f(\mathbf{x}) = \sigma_L(\mathbf{W}_L \cdots \sigma_2(\mathbf{W}_2 \, \sigma_1(\mathbf{W}_1 \mathbf{x} + \mathbf{b}_1) + \mathbf{b}_2) \cdots + \mathbf{b}_L)
+\end{equation}
+
+Los parámetros entrenables del modelo son el conjunto $\{\mathbf{W}_1, \mathbf{b}_1, \mathbf{W}_2, \mathbf{b}_2, \ldots, \mathbf{W}_L, \mathbf{b}_L\}$, cuyo número total crece con la anchura y la profundidad de la red.
+
+El entrenamiento de una red neuronal se formula como un problema de optimización. Dado un conjunto de entrenamiento $\{(\mathbf{x}_n, y_n)\}_{n=1}^{N_T}$, se define una \textit{función de coste} (o función de pérdida) $C$ que mide la discrepancia entre las predicciones del modelo $f(\mathbf{x}_n)$ y las etiquetas verdaderas $y_n$. El objetivo es encontrar los parámetros $\boldsymbol{\theta} = \{\mathbf{W}_l, \mathbf{b}_l\}$ que minimizan $C$:
+
+\begin{equation} \label{eq: optimizacion}
+    \boldsymbol{\theta}^* = \arg\min_{\boldsymbol{\theta}} \; C(\boldsymbol{\theta}) = \arg\min_{\boldsymbol{\theta}} \; \frac{1}{N_T} \sum_{n=1}^{N_T} \mathcal{L}(f(\mathbf{x}_n; \boldsymbol{\theta}), y_n)
+\end{equation}
+
+donde $\mathcal{L}$ es una función de pérdida por muestra (por ejemplo, el error cuadrático medio o la entropía cruzada). Este es un problema de minimización en un espacio de alta dimensión --las redes modernas tienen millones o miles de millones de parámetros--, que se resuelve mediante variantes del \textit{descenso de gradiente} \citebox{schmidhuber2015deep}.
+
+El algoritmo fundamental para calcular los gradientes necesarios es la \textit{retropropagación} (\textit{backpropagation}), que aplica sistemáticamente la regla de la cadena del cálculo diferencial para propagar el error desde la capa de salida hacia las capas inferiores. Para un parámetro $\theta$ cualquiera de la red, el gradiente se calcula como:
+
+\begin{equation} \label{eq: backprop}
+    \frac{\partial C}{\partial \theta} = \frac{\partial C}{\partial \mathbf{y}_L} \cdot \frac{\partial \mathbf{y}_L}{\partial \mathbf{y}_{L-1}} \cdots \frac{\partial \mathbf{y}_{l+1}}{\partial \mathbf{y}_l} \cdot \frac{\partial \mathbf{y}_l}{\partial \theta}
+\end{equation}
+
+donde $\mathbf{y}_l$ es la salida de la capa $l$-ésima. La actualización de los parámetros sigue entonces la regla $\theta \leftarrow \theta - \eta \, \partial C / \partial \theta$, donde $\eta > 0$ es la tasa de aprendizaje.
+
+Desde la perspectiva de un físico, el entrenamiento de una red neuronal es conceptualmente análogo a la minimización de una función de energía en un sistema con muchos grados de libertad. La función de coste desempeña el papel del Hamiltoniano, los parámetros de la red son los grados de libertad, y el descenso de gradiente es un procedimiento análogo al enfriamiento simulado o a la relajación variacional. Esta analogía no es puramente retórica: tanto en física como en aprendizaje automático, el reto fundamental es explorar eficientemente un paisaje de alta dimensión en busca de mínimos globales (o, al menos, mínimos locales de buena calidad) \citebox{schmidhuber2015deep}.
+
+Las redes neuronales se pueden clasificar según la topología de sus conexiones. Las redes \textit{forward-propagation} (propagación hacia delante) o \textit{feedforward} (FF), son aquellas en las que la información fluye unidireccionalmente desde la entrada hacia la salida sin ciclos, constituyen la forma más extendida. Dentro de este grupo, las redes convolucionales (CNN) destacan por su capacidad para procesar datos con estructura espacial mediante el uso de filtros que detectan patrones locales de forma eficiente \citebox{wang2023tensor}. Las redes recurrentes (RNN), por su parte, incorporan conexiones cíclicas que permiten mantener un estado interno a lo largo del tiempo, haciéndolas idóneas para el procesamiento de secuencias y datos temporales \citebox{wang2023tensor}. En términos de profundidad, las RNN pueden considerarse las más profundas de todas las arquitecturas, dado que sus cadenas causales se extienden de manera indefinida \citebox{schmidhuber2015deep}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{figures/NeuralNetworks_recortada.png}
+    \caption{Representación de las redes neuronales más comunes y simples. Empezando por el perceptrón, que fue el primer modelo de red neuronal propuesto en el año 1958 por Frank Rosenblatt, hasta llegar a modelos más modernos como las RNN. Fuente: \citebox{vanveen2019zoo}.}
+    \label{fig: 1}
+\end{figure}
+
+El campo del aprendizaje automático distingue también entre aprendizaje supervisado, no supervisado y por refuerzo. En el primero, la red dispone de etiquetas para cada muestra de entrenamiento. En el segundo, el objetivo es extraer estructura latente sin supervisión externa, como en los \textit{autoencoders} o las máquinas de Boltzmann restringidas (RBM). El aprendizaje por refuerzo se basa en la interacción de un agente con un entorno, aprendiendo a seleccionar acciones que maximicen una señal de recompensa acumulada \citebox{schmidhuber2015deep}.
+
+La diferencia fundamental entre las redes clásicas y las redes \textit{deep} radica en su capacidad de representación. Una red con una única capa oculta puede, en teoría, aproximar cualquier función continua con la suficiente anchura —teorema de aproximación universal—, pero resulta ineficiente para capturar estructuras jerárquicas, como las que están presentes en las imágenes o en el lenguaje natural \citebox{cichocki2016tensor}. Las redes profundas, en cambio, aprenden representaciones en múltiples niveles de abstracción: las capas más bajas detectan características primitivas como bordes o frecuencias, mientras que las superiores combinan estas primitivas para reconocer objetos complejos o conceptos semánticos \citebox{wang2023tensor}. Esta propiedad de aprendizaje por representación hace que el \textit{Deep Learning} sea especialmente adecuado para problemas en los que la ingeniería manual de características resultaría inviable.
+
+Los modelos de \textit{Deep Learning} exigen grandes volúmenes de datos de entrenamiento y una potencia de cómputo muy superior a la de los modelos clásicos, aspecto que durante décadas limitó su desarrollo. Sin embargo, la disponibilidad creciente de conjuntos de datos masivos y la proliferación de unidades de procesamiento gráfico (GPU) eliminaron estos cuellos de botella y permitieron el despegue definitivo del \textit{Deep Learning} a partir de la segunda mitad de la década de 2000 \citebox{schmidhuber2015deep}.
+
+En la actualidad, las redes neuronales de \textit{Deep Learning} han revolucionado la inteligencia artificial al demostrar capacidades sin precedentes en la captura de patrones complejos y representaciones jerárquicas \citebox{wang2023tensor}. En el campo de la visión por computador, la evolución de las arquitecturas CNN ha marcado hitos sucesivos en la clasificación de imágenes sobre ImageNet: desde AlexNet (2012), que inauguró la era de las CNN profundas en competición, hasta VGGNet, GoogLeNet y ResNet, cada una introduciendo innovaciones arquitectónicas que han impulsado progresivamente el estado del arte \citebox{wang2023tensor}. En biología estructural, AlphaFold2 supuso una revolución al predecir la estructura de prácticamente todas las proteínas conocidas con precisión atómica, reduciendo de años a días el tiempo necesario \citebox{wang2023tensor}. En procesamiento del lenguaje natural, la irrupción de los grandes modelos de lenguaje (LLM) basados en arquitecturas Transformer —ChatGPT, Llama, Claude 3 o DeepSeek— han demostrado capacidades que igualan o superan el rendimiento humano en amplias variedades de tareas \citebox{wang2023tensor}.
+
+Sin embargo, el éxito del Deep Learning no está exento de desafíos. Los modelos de última generación requieren cientos de miles de millones de parámetros, con los consiguientes costes computacionales y energéticos, así como dificultades para su despliegue en entornos con recursos limitados. Es en este contexto donde las Tensor Networks emergen como una alternativa prometedora, gracias a su capacidad para representar y comprimir eficientemente estructuras multilineales de alta dimensión, pueden reducir drásticamente el número de parámetros de los modelos de Deep Learning manteniendo su capacidad expresiva \citebox{wang2023tensor}. La intersección entre redes neuronales y redes tensoriales, lejos de ser una mera coincidencia formal, refleja una conexión profunda a través de sus estructuras matemáticas multilineales compartidas \citebox{wang2023tensor}, abriendo el nuevo frente de investigación que este trabajo pretende explorar.
+
+Conviene detenerse brevemente en esta cuestión, pues el paralelismo entre Deep Learning y física cuántica que motiva este trabajo se hace especialmente transparente cuando se examina el problema de la dimensionalidad. Esos elevados costes computacionales y energéticos son la consecuencia visible de una estrategia más profunda: la \textit{sobreparametrización} característica del Deep Learning, en la que las redes modernas contienen típicamente muchos más parámetros que muestras de entrenamiento.
+
+Bajo esta estrategia subyace una raíz matemática común a física y aprendizaje automático, conocida como la \textit{maldición de la dimensionalidad}. Cuando se intenta representar una función general de $N$ variables, cada una de las cuales puede tomar $d$ valores, el número de parámetros necesarios para una representación exacta crece como $d^N$ --de forma exponencial con el número de variables--. Una imagen modesta de $28 \times 28$ píxeles en escala de grises tiene $N = 784$ variables; representar la función de clasificación más general posible sobre estas imágenes requeriría un número de parámetros astronómicamente grande.
+
+Este mismo problema aparece, con idéntica estructura matemática, en la física cuántica de muchos cuerpos. La función de onda de un sistema de $N$ partículas cuánticas con dimensión local $d$ es un tensor de $d^N$ componentes, exactamente el mismo crecimiento exponencial. Como se desarrollará en la sección siguiente, las Tensor Networks nacieron precisamente para resolver este problema en física, explotando la estructura del entrelazamiento para representar la función de onda con un número polinomial de parámetros \citebox{cichocki2016tensor}.
+
+La convergencia de estos dos problemas --la sobreparametrización en Deep Learning y la explosión exponencial en mecánica cuántica-- no es una mera coincidencia formal. En ambos casos, la solución reside en explotar la estructura interna del objeto que se desea representar: en física, la estructura de entrelazamiento de los estados cuánticos; en aprendizaje automático, la estructura de correlaciones de los datos. Las Tensor Networks proporcionan un marco unificado para abordar ambos problemas, y su aplicación a modelos de clasificación de imágenes --objetivo central de este trabajo-- puede interpretarse como la transferencia de herramientas desarrolladas durante décadas en física de la materia condensada al dominio del aprendizaje automático \citebox{wang2023tensor}.
+
+\section{Introducción a Tensor Networks}
+
+Antes de introducir o dar una definición de lo que es una \textit{Tensor Network} (TN), es conveniente aclarar primero la definición de un tensor.
+
+\subsection{Concepto de tensor}
+Un tensor lo podemos ver definido de diferentes formas dependiendo del campo en el que estemos trabajando.
+
+Desde un puesto de vista computacional, los tensores son \textit{arrays} multidimensionales que generalizan de forma natural los conceptos de escalar, vector y matriz a dimensiones arbitrariamente superiores. Desde un punto de vista físico-matemático, los tensor son objetos matemáticos de orden superior, que representan relaciones multidimensionales entre distintas variables o grados de libertad. Dicho de otra forma, un tensor de orden $N$ es un objeto cuyos elementos tienen $N$ índices y están asociados a $N$ vectores base. \[R^{I_1 \times I_2 \times \cdots \times I_N}\] donde $N$ es el número de modos y las longitudes $I_1, \ldots, I_N$ representan las dimensiones de cada modo. \citebox{wang2023tensor}
+
+Bajo esta definición, los escalares son tensores de orden cero, los vectores son tensores de orden 1, y las matrices son tensores de orden 2; todo caso superior constituye propiamente lo que en la literatura se denomina, tensor de alto orden. En la notación convencional, se distinguen los diferentes objetos según su orden: las letras minúsculas en cursiva ($a$) denotan escalares, las letras minúsculas en negrita ($\mathbf{a}$) denotan vectores, las letras mayúsculas en negrita ($\mathbf{A}$) denotan matrices, y las letras mayúsculas en tipografía cursiva en negrita ($\boldsymbol{\mathcal{A}}$) denotan tensores de orden superior. \citebox{wang2023tensor}
+
+La intuición física detrás de los tensores resulta natural cuando se considera, que muchos fenómenos del mundo real son inherentemente multidimensionales. Una imagen en color, por ejemplo, es un tensor de orden tres: altura, anchura y canales cromáticos. Los datos de resonancia magnética funcional (fMRI) constituyen tensores de orden cuatro, compuestos por vóxeles tridimensionales que varían en el tiempo. En mecánica cuántica, las funciones de onda variacionales de sistemas de muchos cuerpos son, igualmente, tensores de alto orden \citebox{wang2023tensor}.
+
+El concepto de tensor tiene raíces en el siglo XIX, ligado al desarrollo del cálculo diferencial absoluto por Ricci-Curbastro y Levi-Civita, aunque fue la formulación de la relatividad general por Einstein en 1915 la que consagró los tensores como herramienta fundamental de la física matemática. La notación de índices de Einstein, que convierte la suma sobre índices repetidos en una convención implícita, es todavía hoy estándar en muchos contextos físicos.
+
+\begin{equation} \label{eq: 1}
+    \boldsymbol{\mathcal{T}} = \sum_{i_1, i_2,..., i_n} \tensor{T}{_{i_1}_{i_2}_{...}_{i_n}} \hat{b_{i_1}} \hat{b_{i_2}}...\hat{b_{i_n}}
+\end{equation}
+
+La operación central en el álgebra tensorial es la contracción tensorial. Dados dos tensores $\boldsymbol{\mathcal{T}}$ y $\boldsymbol{\mathcal{R}}$, de orden $n$ y $m$ respectivamente, con elementos $\tensor{T}{_{i_1}_{i_2}_{...}_{i_n}}$ y $\tensor{R}{_{j_1}_{j_2}_{...}_{j_m}}$ y en la misma base ortonormal $\hat{b}_{i}$, diremos que el tensor $\boldsymbol{\mathcal{C}}$ es la contracción de ambos tensores por sus último $q$ índices cuando:
+
+\begin{equation} \label{eq: 2}
+    \mathcal{C} = \sum_{i_1, i_2,...,i_{n-q},j_1,j_2,...,j_{m-q}} \tensor{C}{_{i_1}_{i_2}_{...}_{i_{n-q}}_{,}_{j_1}_{j_2}_{...}_{j_{m-q}}} \hat{b}_{i_1}\hat{b}_{i_2}...\hat{b}_{n-q}\hat{b}_{j_1}\hat{b}_{j_2}...\hat{b}_{m-q}
+\end{equation}
+
+siendo sus elementos
+
+\begin{equation} \label{eq: 3}
+    \tensor{C}{_{i_1}_{i_2}_{...}_{i_{n-q}}_{,}_{j_1}_{j_2}_{...}_{j_{m-q}}} = \sum_{k_1, k_2,...,k_{q}} \tensor{T}{_{i_1}_{i_2}_{...}_{i_{n-q}}_{,}_{k_1}_{k_2}_{...}_{k_{q}}} \tensor{R}{_{j_1}_{j_2}_{...}_{j_{m-q}}_{,}_{k_1}_{k_2}_{...}_{k_{q}}}
+\end{equation}
+
+De esta definición podemos sacar que la contracción tensorial es la operación mediante la cual dos tensores se contraen en un único tensor a lo largo de sus pares de índices asociados. Existen formas diferentes de contracciones, algunas implican más de dos tensores o un índice repetido en más de dos tensores o incluso repetidos en el mismo tensor. El caso más familiar de contracción tensorial es la multiplicación matricial: \[\mathbf{AB} = \sum_{k} A_{ik}B_{kj}\hat{b}_i\hat{b}_j\] o el producto escalar entre dos vectores: \[\vec{v}\cdot\vec{w} = \sum_i v_iw_i\]
+
+Entre las operaciones tensoriales fundamentales cabe destacar la traza de una matriz:
+
+\begin{equation}
+    Tr(A) = \sum_{i}A_{ii}
+\end{equation}
+
+Esto sería la contracción de una matriz consigo misma a través de sus índices repetidos. Debido a esta operación podemos ver que, un tensor también sirve como mapeo entre dos espacios vectoriales. Esto es un tensor, que recibe otro tensor y devuelve un tercer tensor.  Por cada índice contraído estamos mezclando componentes del tensor de entrada, reduciendo en 1 el orden del tensor de salida. Por otro lado, los índices que no han sido contraídos aumentarán en 1 el orden del tensor de salida.
+
+\subsection{Notación diagramática}
+
+La representación algebraica de las contracciones tensoriales, aunque precisa, se vuelve rápidamente inmanejable a medida que aumenta el número de tensores y la complejidad de sus conexiones. Fue Roger Penrose \citebox{penrose1971applications} quien, a principios de la década de 1970, introdujo la notación diagramática para tensores, proporcionando una alternativa visual que transformó la manera en que se razona sobre estas estructuras. Los diagramas de redes tensoriales son hoy ampliamente utilizados para describir algoritmos cuánticos y algoritmos de aprendizaje automático \citebox{wang2023tensor}.
+
+La idea central de la notación de Penrose es representar cada tensor como un nodo del que emanan tantas aristas como índices tenga el tensor. Concretamente: un nodo con una sola arista representa un vector $\mathbf{a} \in \mathbb{R}^I$; un nodo con dos aristas representa una matriz $\mathbf{A} \in \mathbb{R}^{I \times J}$; y un nodo con tres aristas representa un tensor $\boldsymbol{\mathcal{A}} \in \mathbb{R}^{I_1 \times I_2 \times I_3}$. Para indicar que un par de índices tensoriales está siendo contraído, ambas aristas se unen mediante una línea. Por ejemplo, la contracción de un tensor de orden uno con uno de orden dos es la multiplicación matriz-vector habitual. Las aristas que no se conectan a ningún otro tensor se denominan aristas libres, y el número de estas aristas en el diagrama resultante es precisamente el orden del tensor final. Dos nodos que no están unidos mediante aristas, representan el producto tensorial entre ellos.
+
+La notación gráfica tensorial ofrece numerosas ventajas sobre la notación tradicional: en forma gráfica, los índices no necesitan nombres ni etiquetas; operaciones como el producto escalar, la traza tensorial y la contracción pueden expresarse sin notación adicional; y el orden del tensor resultante puede leerse simplemente contando el número de aristas libres. En particular, si en el diagrama no quedan aristas libres tras todas las contracciones, el resultado es necesariamente un escalar. Esta propiedad convierte los diagramas en una herramienta de verificación inmediata de la consistencia dimensional de operaciones complejas \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Sobre esta base visual puede introducirse ya, de manera natural, el concepto de Tensor Network.
+
+Una Tensor Network (TN) es, en esencia, una representación gráfica de una ecuación multilineal entre diferentes tensores. Esta representación se apoya en la notación diagramática de Penrose, que con el tiempo se ha ido adaptando a las necesidades de disciplinas como la física, las matemáticas o la ciencia computacional \citebox{biamonte2017tensornetworksnutshell}. Puede verse un ejemplo en la \figref{fig: TensorNetwork}, donde aparece la Tensor Network que representa el 2-tensor $\tensor{T}{_{i}_{p}}$ cuyos elementos se obtienen mediante la operación de contracción
+
+\begin{equation} \label{eq: 5}
+\tensor{T}{_{i}_{p}} = \sum_{j, k, l, m, n, o}\tensor{A}{_{i}_{j}_{k}_{l}} \tensor{B}{_{j}_{m}}\tensor{C}{_{k}_{m}_{n}}\tensor{D}{_{l}_{o}}\tensor{E}{_{n}_{o}_{p}}
+\end{equation}
+
+\begin{figure}[htbp]
+\centering
+\makebox[\textwidth]{%
+  \begin{minipage}{1.1\textwidth}
+    \centering
+    \includegraphics[scale=0.6]{figures/TensorNetwork_example.png}
+    \caption{Ejemplo de representación diagramática para un tensor. Fuente:\citebox{2024arXiv240411277M}}
+    \label{fig: TensorNetwork}
+  \end{minipage}%
+}
+\end{figure}
+
+La motivación fundamental para el uso de las Tensor Networks es de naturaleza computacional. Un tensor de orden $N$ con dimensión $d$ en cada nodo tiene $d^N$ componentes, un número que crece exponencialmente con el orden del tensor, haciendo que su almacenamiento y manipulación directos sean computacionalmente prohibitivos; este fenómeno se conoce como la \textit{maldición de la dimensionalidad}. Las Tensor Networks abordan este problema representando el tensor original no de forma explícita, sino como el resultado de contraer un conjunto de tensores de menor orden, cada uno con un número de parámetros manejable, de modo que la complejidad resultante escala de forma polinomial en lugar de exponencial \citebox{wang2023tensor, stoudenmire2017supervisedlearningquantuminspiredtensor}. Esta idea general se entiende mejor cuando se examina el contexto físico en el que surgió.
+
+\subsection{Origen físico y papel del entrelazamiento}
+ 
+Las Tensor Networks no nacieron como una herramienta matemática abstracta ni como un recurso computacional genérico: su origen está profundamente enraizado en la física cuántica, concretamente en el problema de describir sistemas de muchas partículas interactuantes. Comprender este origen es esencial para apreciar por qué las Tensor Networks resultan tan eficaces cuando se aplican fuera de su contexto original, como en el aprendizaje automático.
+ 
+\noindent\textbf{El problema de muchos cuerpos en mecánica cuántica.}
+ 
+En mecánica cuántica, el estado de un sistema físico queda completamente descrito por su función de onda $\ket{\psi}$, que pertenece a un espacio de Hilbert $\mathcal{H}$. Para una única partícula con espín $1/2$, por ejemplo, el espacio de Hilbert es de dimensión $d = 2$: la partícula puede encontrarse en el estado $\ket{0}$ (espín arriba) o $\ket{1}$ (espín abajo), o en cualquier superposición de ambos. Hasta aquí, el problema es perfectamente manejable.
+ 
+La dificultad surge cuando consideramos un sistema compuesto por $N$ partículas. En mecánica cuántica, el espacio de Hilbert del sistema total es el producto tensorial de los espacios individuales:
+ 
+\begin{equation} \label{eq: hilbert_compuesto}
+    \mathcal{H}_{\text{total}} = \mathcal{H}_1 \otimes \mathcal{H}_2 \otimes \cdots \otimes \mathcal{H}_N
+\end{equation}
+ 
+Si cada partícula tiene una dimensión local $d$ (por ejemplo, $d = 2$ para espines $1/2$), la dimensión del espacio total es $d^N$. Un estado general del sistema se escribe como:
+ 
+\begin{equation} \label{eq: estado_general}
+    \ket{\psi} = \sum_{s_1, s_2, \ldots, s_N} C_{s_1 s_2 \ldots s_N} \ket{s_1} \otimes \ket{s_2} \otimes \cdots \otimes \ket{s_N}
+\end{equation}
+ 
+donde el tensor de coeficientes $C_{s_1 s_2 \ldots s_N}$ contiene $d^N$ números complejos que describen completamente el estado cuántico \citebox{wang2023tensor}. Este tensor es exactamente un tensor de orden $N$ en el sentido definido en la sección anterior.
+ 
+El crecimiento exponencial de este espacio constituye el obstáculo fundamental de la física cuántica de muchos cuerpos. Para un sistema modesto de $N = 40$ espines $1/2$, el tensor de coeficientes tiene $2^{40} \approx 10^{12}$ componentes complejas. Almacenar este tensor en memoria requeriría del orden de $16$ terabytes (a 16 bytes por número complejo de doble precisión). Para $N = 100$, la cifra asciende a $2^{100} \approx 10^{30}$, un número que excede con creces la capacidad de cualquier computador existente o concebible \citebox{cichocki2016tensor}. Aparece así, de nuevo, la \textit{maldición de la dimensionalidad}, ahora vista desde su contexto físico original.
+ 
+\noindent\textbf{La estructura de los estados cuánticos físicamente relevantes.}
+ 
+A pesar de la enormidad del espacio de Hilbert, la naturaleza ofrece una salida: los estados cuánticos que aparecen en la práctica --estados fundamentales de Hamiltonianos con interacciones locales, estados térmicos a baja temperatura, o estados que resultan de evoluciones temporales físicamente razonables-- no ocupan la totalidad del espacio $d^N$-dimensional, sino que se concentran en una región mucho más pequeña \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+La razón de esta restricción reside en la estructura del entrelazamiento cuántico. El entrelazamiento es una propiedad genuinamente cuántica que describe las correlaciones no clásicas entre subsistemas. Cuando un sistema de muchas partículas se encuentra en su estado de mínima energía (estado fundamental), el grado de entrelazamiento entre una región del sistema y el resto está limitado por una ley conocida como la \textit{ley de área} (\textit{area law}): la entropía de entrelazamiento entre un subsistema y su complemento no crece con el volumen del subsistema, sino con el tamaño de la frontera que los separa \citebox{bhatia2025application}. En un sistema unidimensional --como una cadena de espines--, la frontera entre cualquier bipartición es simplemente un punto, lo que implica que el entrelazamiento permanece acotado por una constante independientemente del tamaño del sistema.
+ 
+Esta observación tiene una consecuencia profunda: si el entrelazamiento está acotado, el tensor de coeficientes $C_{s_1 s_2 \ldots s_N}$ posee una estructura interna muy particular que permite representarlo de forma compacta, sin necesidad de almacenar explícitamente sus $d^N$ componentes. Las Tensor Networks son precisamente la herramienta matemática que explota esta estructura.
+
+Para entender por qué esta compresión es posible, conviene introducir con algo más de detalle el concepto de entrelazamiento cuántico, que determina qué estados pueden describirse eficientemente mediante una Tensor Network.
+
+\noindent\textbf{Estados producto y estados entrelazados.}
+ 
+Para comprender el entrelazamiento, consideremos primero su opuesto: un estado sin entrelazamiento, denominado \textit{estado producto}. Si un sistema de $N$ partículas se encuentra en un estado producto, su función de onda se puede escribir como:
+ 
+\begin{equation} \label{eq: estado_producto}
+    \ket{\psi_{\text{prod}}} = \ket{\phi_1} \otimes \ket{\phi_2} \otimes \cdots \otimes \ket{\phi_N}
+\end{equation}
+ 
+donde cada $\ket{\phi_k}$ es el estado individual de la partícula $k$-ésima. En un estado producto, cada partícula está completamente descrita por su estado individual: el resultado de una medida sobre la partícula $k$ es estadísticamente independiente de cualquier medida sobre las demás. El tensor de coeficientes $C_{s_1 s_2 \ldots s_N}$ de un estado producto es simplemente el producto exterior de $N$ vectores, lo que significa que solo tiene rango $1$ y puede almacenarse con $N \cdot d$ parámetros en lugar de $d^N$.
+ 
+Sin embargo, la inmensa mayoría de los estados cuánticos no son estados producto. En general, el estado del sistema presenta correlaciones cuánticas entre sus partes que no pueden explicarse de forma clásica. Este fenómeno recibe el nombre de \textit{entrelazamiento cuántico}. En un estado entrelazado, la medida sobre un subsistema afecta instantáneamente a la descripción del resto del sistema, independientemente de la distancia física que los separe.
+ 
+\noindent\textbf{Descomposición de Schmidt y entropía de entrelazamiento.}
+ 
+Para cuantificar el entrelazamiento, se utiliza la \textit{descomposición de Schmidt}. Consideremos una bipartición del sistema en dos subsistemas $A$ y $B$ (por ejemplo, las primeras $n$ partículas y las últimas $N-n$). Cualquier estado puro $\ket{\psi}$ admite una descomposición de la forma:
+ 
+\begin{equation} \label{eq: schmidt}
+    \ket{\psi} = \sum_{\alpha=1}^{\chi} \lambda_\alpha \ket{\phi_\alpha^A} \otimes \ket{\phi_\alpha^B}
+\end{equation}
+ 
+donde $\{\ket{\phi_\alpha^A}\}$ y $\{\ket{\phi_\alpha^B}\}$ son bases ortonormales de los subsistemas $A$ y $B$ respectivamente, los coeficientes $\lambda_\alpha \geq 0$ se denominan \textit{valores de Schmidt} y satisfacen $\sum_\alpha \lambda_\alpha^2 = 1$, y $\chi$ es el \textit{rango de Schmidt}, es decir, el número de valores de Schmidt no nulos.
+ 
+Un estado producto tiene $\chi = 1$ (un único valor de Schmidt $\lambda_1 = 1$), mientras que un estado máximamente entrelazado tiene $\chi = \min(d^n, d^{N-n})$ con todos los valores de Schmidt iguales. La descomposición de Schmidt está íntimamente relacionada con la descomposición en valores singulares (SVD) del álgebra lineal: si reorganizamos el tensor de coeficientes $C_{s_1 \ldots s_N}$ como una matriz $M$ de dimensiones $d^n \times d^{N-n}$, la SVD de $M$ proporciona directamente los valores de Schmidt y las bases de Schmidt \citebox{schollwock2011dmrg}.
+ 
+La medida estándar del entrelazamiento para estados puros es la \textit{entropía de entrelazamiento de von Neumann}, definida a partir de la matriz densidad reducida del subsistema $A$:
+ 
+\begin{equation} \label{eq: densidad_reducida}
+    \rho_A = \text{Tr}_B \left( \ket{\psi}\bra{\psi} \right) = \sum_{\alpha=1}^{\chi} \lambda_\alpha^2 \ket{\phi_\alpha^A}\bra{\phi_\alpha^A}
+\end{equation}
+ 
+\begin{equation} \label{eq: entropia_von_neumann}
+    S(\rho_A) = -\text{Tr}\left(\rho_A \log \rho_A\right) = -\sum_{\alpha=1}^{\chi} \lambda_\alpha^2 \log \lambda_\alpha^2
+\end{equation}
+ 
+La entropía $S(\rho_A)$ es cero si y solo si el estado es un producto (no hay entrelazamiento), y alcanza su valor máximo $\log(\min(d^n, d^{N-n}))$ para un estado máximamente entrelazado. Cuanto mayor es la entropía de entrelazamiento, más compleja es la estructura de correlaciones entre los subsistemas y, en consecuencia, más difícil resulta representar el estado de forma compacta \citebox{wang2023tensor}.
+ 
+\noindent\textbf{La ley de área del entrelazamiento.}
+ 
+El resultado clave que conecta el entrelazamiento con las Tensor Networks es la llamada \textit{ley de área} (\textit{area law}). Para sistemas cuánticos en los que las interacciones entre partículas son locales --es decir, cada partícula interactúa solo con sus vecinas más próximas--, los estados de baja energía (y en particular el estado fundamental) satisfacen una propiedad notable: la entropía de entrelazamiento entre una región $A$ y el resto del sistema $B$ no escala con el volumen de $A$, sino con el tamaño de la frontera que separa $A$ de $B$ \citebox{bhatia2025application}.
+ 
+En un sistema unidimensional (una cadena de espines), la frontera entre cualquier bipartición contigua es un único punto, independientemente del tamaño del sistema. Esto implica que la entropía de entrelazamiento está acotada por una constante:
+ 
+\begin{equation} \label{eq: area_law_1d}
+    S(\rho_A) \leq \text{const.} \quad \text{(sistemas 1D con gap espectral)}
+\end{equation}
+ 
+En un sistema bidimensional, la frontera es una línea cuya longitud $L$ es proporcional al perímetro de la región $A$, y la entropía crece proporcionalmente a $L$ en lugar de al área de la región \citebox{bhatia2025application}.
+ 
+La ley de área tiene una consecuencia computacional directa y de gran alcance. Si el entrelazamiento está acotado, el rango de Schmidt $\chi$ efectivo en cualquier bipartición del sistema es finito (o crece lentamente), lo que significa que la función de onda puede representarse fielmente mediante un número de parámetros que crece solo polinomialmente con el tamaño del sistema $N$, en lugar de exponencialmente. Las Tensor Networks son la herramienta que materializa esta compresión \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+\noindent\textbf{Consecuencias para las Tensor Networks.}
+ 
+La relación entre entrelazamiento y Tensor Networks se concreta de la siguiente manera. Un MPS con dimensión de enlace $D$ puede representar estados cuya entropía de entrelazamiento satisface $S \leq \log D$ para cualquier bipartición contigua. Puesto que la ley de área garantiza que el estado fundamental de una cadena unidimensional con gap espectral tiene $S \leq \text{const.}$, basta con elegir un $D$ finito para obtener una representación fiel del estado, con un número total de parámetros del orden de $N \cdot d \cdot D^2$, que es polinomial en $N$ \citebox{schollwock2011dmrg}.
+ 
+En este sentido, la dimensión de enlace $D$ adquiere una interpretación física muy clara: controla la cantidad máxima de entrelazamiento que la red tensorial puede albergar. Si $D$ es demasiado pequeño, la TN no puede capturar todas las correlaciones del estado y la representación será aproximada; si $D$ es suficientemente grande, la representación es exacta. Esto explica por qué $D$ es el hiperparámetro central de los modelos basados en Tensor Networks, tanto en física cuántica como en aprendizaje automático \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor, wang2023tensor}.
+ 
+Es importante señalar que no todos los estados satisfacen la ley de área. Los sistemas cuánticos en puntos críticos --donde se produce una transición de fase cuántica-- exhiben correcciones logarítmicas a la ley de área, del tipo $S \sim \log N$, lo que requiere dimensiones de enlace mayores o arquitecturas tensoriales más sofisticadas como MERA \citebox{vidal2007mera}. Los estados completamente aleatorios, por su parte, violan la ley de área de forma masiva, con una entropía que escala con el volumen del subsistema; estos estados no pueden representarse eficientemente mediante ninguna Tensor Network, pero tampoco son físicamente relevantes.
+ 
+La ley de área no es exclusiva de la mecánica cuántica. En el contexto del aprendizaje automático, la estructura de correlaciones de los datos de entrada juega un papel análogo al del entrelazamiento: los píxeles vecinos en una imagen están más correlacionados que los lejanos, lo que impone una estructura de correlación local que las Tensor Networks pueden explotar eficientemente \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Esta analogía entre la localidad espacial en imágenes y la ley de área en física cuántica es una de las razones por las que los modelos tensoriales, originalmente diseñados para la física, resultan naturalmente adecuados para tareas de clasificación de imágenes.
+
+\noindent\textbf{El DMRG y el nacimiento de las Tensor Networks modernas.}
+
+ Sobre esta base física se entiende mejor el punto de inflexión histórico del campo, que llegó en 1992, cuando Steven R. White propuso el algoritmo \textit{Density Matrix Renormalization Group} (DMRG) \citebox{white1992dmrg}. El DMRG fue diseñado para calcular el estado fundamental de cadenas cuánticas unidimensionales y revolucionó el campo de la materia condensada al proporcionar resultados de una precisión sin precedentes para sistemas que hasta entonces eran intratables.
+
+Aunque White formuló el DMRG como un procedimiento iterativo de truncamiento del espacio de Hilbert basado en la matriz densidad reducida, posteriormente se demostró que el estado variacional que el DMRG optimiza es, de hecho, un \textit{Matrix Product State} (MPS) \citebox{schollwock2011dmrg}. Es decir, el DMRG puede entenderse como un algoritmo de optimización variacional sobre el espacio de tensores en formato MPS. Este descubrimiento fue fundamental porque conectó un algoritmo numérico exitoso con un marco teórico riguroso: la teoría de Tensor Networks.
+
+A partir de esta conexión, se desarrollaron nuevas arquitecturas tensoriales adaptadas a diferentes geometrías y tipos de correlaciones. Los \textit{Projected Entangled Pair States} (PEPS) generalizan el MPS a dos dimensiones \citebox{verstraete2004peps}; los \textit{Tree Tensor Networks} (TTN) adoptan una estructura jerárquica en árbol; y la \textit{Multi-scale Entanglement Renormalization Ansatz} (MERA) introduce una estructura de capas diseñada para capturar correlaciones a múltiples escalas en sistemas con invariancia de escala, como los sistemas críticos \citebox{vidal2007mera}. Cada una de estas arquitecturas será tratada en detalle más adelante.
+
+\noindent\textbf{De la física cuántica al aprendizaje automático.} 
+
+La conexión entre Tensor Networks y aprendizaje automático no es una mera analogía superficial, sino que se fundamenta en una correspondencia estructural profunda. En ambos campos, el problema central es el mismo: representar y manipular objetos que viven en espacios de dimensionalidad exponencialmente grande \citebox{wang2023tensor}.
+
+En mecánica cuántica, el objeto es la función de onda $\ket{\psi}$, un tensor de orden $N$ con $d^N$ componentes que describe las correlaciones entre $N$ partículas. En aprendizaje automático, el objeto análogo es el tensor de pesos $W$ que parametriza un modelo de clasificación; cuando se utiliza un mapa de características (\textit{feature map}) basado en productos tensoriales, este tensor de pesos también puede tener un número exponencial de componentes \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+
+La idea clave que permite trasladar las Tensor Networks de la física al aprendizaje automático es la siguiente: del mismo modo que los estados físicos relevantes no ocupan todo el espacio de Hilbert debido a las restricciones impuestas por el entrelazamiento, los modelos de clasificación eficaces no necesitan explorar la totalidad del espacio exponencial de pesos. La estructura de correlaciones presente en los datos de entrenamiento --por ejemplo, la localidad espacial en imágenes-- desempeña un papel análogo al de la ley de área en física cuántica \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Las Tensor Networks explotan esta estructura para representar el tensor de pesos de forma compacta, con un número de parámetros que crece polinomialmente en lugar de exponencialmente con el tamaño de la entrada.
+
+Esta correspondencia no se limita al nivel conceptual. Los algoritmos de optimización desarrollados para entrenar modelos tensoriales en aprendizaje automático son descendientes directos del DMRG y sus variantes; la dimensión de enlace que controla la precisión de un MPS en física cuántica es exactamente el mismo hiperparámetro que controla la capacidad expresiva de un clasificador tensorial \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor, wang2023tensor}. Este paralelismo íntimo entre los dos campos constituye la motivación central del presente trabajo.
+
+\subsection{Descomposiciones tensoriales fundamentales}
+ 
+En las secciones anteriores se ha establecido que las Tensor Networks permiten representar tensores de alto orden de forma compacta, explotando la estructura de entrelazamiento o correlación presente en los datos. Sin embargo, para comprender cómo se construyen estas representaciones en la práctica, es necesario conocer las descomposiciones tensoriales que constituyen sus fundamentos matemáticos. Estas descomposiciones generalizan al caso tensorial técnicas de factorización matricial bien conocidas en álgebra lineal, como la descomposición en valores singulares (SVD).
+ 
+\noindent\textbf{Descomposición en valores singulares (SVD).}
+ 
+La descomposición en valores singulares es la herramienta algebraica central sobre la que se construyen la mayoría de las descomposiciones tensoriales. Dada una matriz $\mathbf{A} \in \mathbb{R}^{M \times N}$, la SVD la factoriza como:
+ 
+\begin{equation} \label{eq: svd}
+    \mathbf{A} = \mathbf{U} \boldsymbol{\Sigma} \mathbf{V}^\top
+\end{equation}
+ 
+donde $\mathbf{U} \in \mathbb{R}^{M \times M}$ y $\mathbf{V} \in \mathbb{R}^{N \times N}$ son matrices ortogonales (sus columnas forman bases ortonormales), y $\boldsymbol{\Sigma} \in \mathbb{R}^{M \times N}$ es una matriz diagonal cuyos elementos $\sigma_1 \geq \sigma_2 \geq \cdots \geq 0$ son los \textit{valores singulares} de $\mathbf{A}$. El número de valores singulares no nulos es el rango de la matriz.
+ 
+La propiedad clave de la SVD para las Tensor Networks es que proporciona la mejor aproximación de rango bajo en norma de Frobenius. Si truncamos la SVD conservando únicamente los $R$ valores singulares más grandes, obtenemos la matriz $\tilde{\mathbf{A}} = \mathbf{U}_R \boldsymbol{\Sigma}_R \mathbf{V}_R^\top$ que minimiza $\|\mathbf{A} - \tilde{\mathbf{A}}\|_F$ entre todas las matrices de rango $R$. Este resultado, conocido como el teorema de Eckart-Young, garantiza que la información más relevante de la matriz se concentra en los primeros valores singulares \citebox{wang2023tensor}.
+ 
+En el contexto de las Tensor Networks, la SVD desempeña un doble papel. Por un lado, como se vio en la sección sobre entrelazamiento, la descomposición de Schmidt de un estado cuántico bipartito es formalmente una SVD del tensor de coeficientes reorganizado como matriz \citebox{schollwock2011dmrg}. Por otro lado, la construcción algorítmica de las principales descomposiciones tensoriales --en particular la Tensor Train-- procede mediante aplicaciones sucesivas de SVD, lo que hace de esta herramienta el enlace técnico entre el álgebra lineal clásica y las Tensor Networks \citebox{wang2023tensor}.
+ 
+\noindent\textbf{Descomposición CP (CANDECOMP/PARAFAC).}
+ 
+La descomposición CP (\textit{Canonical Polyadic}) es la generalización más directa del concepto de rango matricial a tensores de orden superior. Dado un tensor $\boldsymbol{\mathcal{X}} \in \mathbb{R}^{I_1 \times I_2 \times \cdots \times I_N}$, la descomposición CP lo expresa como una suma de $R$ tensores de rango 1:
+ 
+\begin{equation} \label{eq: CP}
+    \boldsymbol{\mathcal{X}} \approx \sum_{r=1}^{R} \mathbf{a}_r^{(1)} \circ \mathbf{a}_r^{(2)} \circ \cdots \circ \mathbf{a}_r^{(N)}
+\end{equation}
+ 
+donde $\circ$ denota el producto exterior, cada $\mathbf{a}_r^{(n)} \in \mathbb{R}^{I_n}$ es un vector, y $R$ es el \textit{rango CP} del tensor, definido como el menor número de componentes de rango 1 necesarias para representarlo exactamente \citebox{kolda2009tensor}. En componentes, la expresión anterior se escribe:
+ 
+\begin{equation} \label{eq: CP_componentes}
+    \tensor{\mathcal{X}}{_{i_1}_{i_2}_{...}_{i_N}} \approx \sum_{r=1}^{R} \tensor{A}{^{(1)}_{i_1 r}} \tensor{A}{^{(2)}_{i_2 r}} \cdots \tensor{A}{^{(N)}_{i_N r}}
+\end{equation}
+ 
+donde $\mathbf{A}^{(n)} \in \mathbb{R}^{I_n \times R}$ son las \textit{matrices de factores} cuyas columnas son los vectores $\mathbf{a}_r^{(n)}$ \citebox{wang2023tensor}.
+ 
+La descomposición CP tiene la ventaja de ofrecer una representación muy compacta: el número total de parámetros es $R \cdot \sum_{n=1}^N I_n$, que crece linealmente con el orden del tensor. Sin embargo, presenta una limitación importante: determinar el rango CP de un tensor dado es un problema NP-difícil, y los algoritmos de optimización (típicamente basados en mínimos cuadrados alternados) no garantizan la convergencia al óptimo global \citebox{wang2023tensor, kolda2009tensor}. En la notación diagramática, la descomposición CP se representa como un conjunto de nodos vectoriales conectados a un nodo central diagonal.
+ 
+\noindent\textbf{Descomposición de Tucker.}
+ 
+La descomposición de Tucker es una factorización más general que la CP. Dado un tensor $\boldsymbol{\mathcal{X}} \in \mathbb{R}^{I_1 \times I_2 \times \cdots \times I_N}$, la descomposición de Tucker lo expresa como:
+ 
+\begin{equation} \label{eq: Tucker}
+    \tensor{\mathcal{X}}{_{i_1}_{i_2}_{...}_{i_N}} \approx \sum_{r_1=1}^{R_1} \sum_{r_2=1}^{R_2} \cdots \sum_{r_N=1}^{R_N} \tensor{\mathcal{G}}{_{r_1}_{r_2}_{...}_{r_N}} \tensor{A}{^{(1)}_{i_1 r_1}} \tensor{A}{^{(2)}_{i_2 r_2}} \cdots \tensor{A}{^{(N)}_{i_N r_N}}
+\end{equation}
+ 
+donde $\boldsymbol{\mathcal{G}} \in \mathbb{R}^{R_1 \times R_2 \times \cdots \times R_N}$ es el \textit{tensor núcleo} (\textit{core tensor}) y cada $\mathbf{A}^{(n)} \in \mathbb{R}^{I_n \times R_n}$ es una matriz de factores. Los valores $R_1, R_2, \ldots, R_N$ se denominan \textit{rangos de Tucker} y pueden ser diferentes entre sí, a diferencia del rango único $R$ de la descomposición CP \citebox{wang2023tensor}.
+ 
+La descomposición de Tucker puede interpretarse como una transformación del tensor original a un espacio de dimensiones reducidas ($R_1 \times R_2 \times \cdots \times R_N$) a través de las matrices de factores, donde la estructura esencial del tensor queda capturada por el tensor núcleo $\boldsymbol{\mathcal{G}}$. Cuando se imponen restricciones de ortogonalidad sobre las matrices de factores, la descomposición de Tucker se denomina \textit{Higher-Order Singular Value Decomposition} (HOSVD), que constituye la generalización natural de la SVD matricial al caso tensorial \citebox{wang2023tensor}.
+ 
+La relación entre las descomposiciones CP y Tucker es directa: la descomposición CP es un caso particular de la Tucker en el que el tensor núcleo $\boldsymbol{\mathcal{G}}$ es superdiagonal (es decir, sus elementos no nulos se encuentran únicamente en la diagonal principal generalizada) y todos los rangos son iguales: $R_1 = R_2 = \cdots = R_N = R$ \citebox{wang2023tensor}.
+ 
+El principal inconveniente de la descomposición de Tucker es que el tensor núcleo $\boldsymbol{\mathcal{G}}$ tiene $\prod_{n=1}^N R_n$ componentes, lo que sigue creciendo exponencialmente con el orden $N$ si los rangos de Tucker son mayores que uno. Esto la hace impracticable para tensores de orden muy alto, que es precisamente la situación habitual tanto en física cuántica de muchos cuerpos como en modelos de aprendizaje automático con un gran número de variables de entrada.
+ 
+\noindent\textbf{De las descomposiciones clásicas al Tensor Train.}
+ 
+Las limitaciones de las descomposiciones CP y Tucker motivaron la búsqueda de formatos que combinasen la compacidad de la CP con la flexibilidad de la Tucker, sin sufrir el crecimiento exponencial del tensor núcleo. El formato \textit{Tensor Train} (TT), introducido por Oseledets en el ámbito de la matemática aplicada \citebox{oseledets2011tt} y conocido como \textit{Matrix Product State} (MPS) en física cuántica \citebox{schollwock2011dmrg}, resuelve este problema de forma elegante.
+ 
+El formato TT descompone un tensor de orden $N$ en una cadena de $N$ tensores de orden 3 (salvo los extremos, que son de orden 2). La idea central es que, en lugar de un único tensor núcleo de tamaño $\prod_n R_n$ (como en Tucker), cada modo del tensor original se asocia a un tensor local $\boldsymbol{\mathcal{G}}^{(n)}$ de tamaño $R_{n-1} \times I_n \times R_n$, y los tensores se conectan secuencialmente mediante la contracción de sus índices virtuales.
+ 
+Esta estructura tiene dos consecuencias fundamentales. En primer lugar, el número total de parámetros es $\sum_{n=1}^N R_{n-1} \cdot I_n \cdot R_n$, que crece linealmente con $N$ para rangos fijos, en marcado contraste con el crecimiento exponencial de Tucker. En segundo lugar, la construcción del formato TT a partir de un tensor dado puede realizarse mediante $N-1$ descomposiciones SVD sucesivas, lo que garantiza estabilidad numérica y proporciona un control directo sobre el error de aproximación mediante el truncamiento de los valores singulares \citebox{wang2023tensor, oseledets2011tt}.
+ 
+La descomposición Tensor Train puede además entenderse como una secuencia de descomposiciones de Schmidt aplicadas iterativamente a cada bipartición del tensor, lo que cierra el círculo con la discusión del entrelazamiento cuántico de la sección anterior: los rangos TT $R_n$ son exactamente los rangos de Schmidt de las biparticiones correspondientes, y su magnitud refleja el grado de correlación entre los primeros $n$ modos y los restantes $N-n$ \citebox{schollwock2011dmrg}.
+ 
+En la \tabref{tab: comparativa_descomposiciones} se resumen las características principales de las tres descomposiciones presentadas.
+ 
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|>{$}l<{$}|>{$}c<{$}|X|}
+\hline
+\textbf{Formato} & \textbf{Parámetros} & \textbf{Observaciones} \\
+\hline
+\text{CP} & R \cdot \textstyle\sum_{n} I_n & Compacta, pero el rango CP es NP-difícil de determinar. \\
+\hline
+\text{Tucker} & \textstyle\prod_{n} R_n + \sum_{n} I_n R_n & Flexible, pero el núcleo crece exponencialmente con $N$. \\
+\hline
+\text{TT / MPS} & \textstyle\sum_{n} R_{n-1} I_n R_n & Crece linealmente con $N$. Construible por SVD sucesivas. \\
+\hline
+\end{tabularx}
+\caption{Comparativa de las descomposiciones tensoriales fundamentales para un tensor de orden $N$ con dimensiones $I_1 \times I_2 \times \cdots \times I_N$.}
+\label{tab: comparativa_descomposiciones}
+\end{table}
+
+\subsection{Topologías de Tensor Networks}
+ 
+Las secciones anteriores han establecido que la eficacia de una Tensor Network para representar un tensor de alto orden depende de la estructura de correlaciones (o entrelazamiento) que se desea capturar. La topología de la red --es decir, la forma en que los tensores locales están conectados entre sí-- determina qué patrones de correlación pueden representarse eficientemente y a qué coste computacional. En esta sección se describen en detalle las cuatro topologías más relevantes en la literatura.
+ 
+\noindent\textbf{Matrix Product State (MPS) / Tensor Train (TT).}
+ 
+El \textit{Matrix Product State} (MPS), también denominado \textit{Tensor Train} (TT) en matemática aplicada, es la topología de Tensor Network más estudiada y la que mejor se entiende desde un punto de vista teórico y algorítmico \citebox{schollwock2011dmrg}. Su estructura consiste en una cadena lineal de $N$ tensores de orden 3 conectados secuencialmente a través de índices virtuales de dimensión $D$ (dimensión de enlace).
+ 
+Desde el punto de vista físico, el MPS es la representación natural de los estados fundamentales de sistemas cuánticos unidimensionales con interacciones locales. Como se discutió en la sección sobre entrelazamiento, estos estados satisfacen la ley de área: el entrelazamiento entre cualquier bipartición contigua está acotado por una constante, lo que permite una representación fiel con dimensión de enlace finita \citebox{bhatia2025application}.
+ 
+Las correlaciones que un MPS puede representar decaen exponencialmente con la distancia entre sitios: la función de correlación entre los sitios $i$ y $j$ satisface $\langle O_i O_j \rangle - \langle O_i \rangle \langle O_j \rangle \sim e^{-|i-j|/\xi}$, donde $\xi$ es una longitud de correlación que depende de la dimensión de enlace $D$ \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Esto significa que el MPS es especialmente eficiente para capturar correlaciones locales o de corto alcance, pero puede requerir dimensiones de enlace elevadas para representar correlaciones de largo alcance.
+ 
+Entre las ventajas del MPS destaca la existencia de algoritmos de optimización muy eficientes, heredados del DMRG. El coste computacional de estos algoritmos escala como $\mathcal{O}(N D^3 d)$ para un solo barrido de optimización, lo que es polinomial en todos sus argumentos \citebox{schollwock2011dmrg}. El número total de parámetros del MPS es del orden de $N d D^2$, que crece linealmente con el tamaño del sistema $N$.
+ 
+En el contexto del aprendizaje automático, el MPS ha sido la primera arquitectura tensorial empleada con éxito como clasificador de imágenes. Stoudenmire y Schwab demostraron que un MPS puede alcanzar una precisión inferior al $1\%$ de error en el conjunto MNIST, utilizando un algoritmo de optimización directamente inspirado en el DMRG \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Aunque el MPS impone una estructura de correlación unidimensional sobre los píxeles de la imagen --lo que a priori no se ajusta a la naturaleza bidimensional de las imágenes--, en la práctica la linearización de los píxeles resulta sorprendentemente efectiva para conjuntos de datos sencillos \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+\noindent\textbf{Tree Tensor Network (TTN).}
+ 
+El \textit{Tree Tensor Network} (TTN) adopta una topología jerárquica en forma de árbol binario. En esta estructura, los tensores de la capa más baja (las hojas) están asociados a los índices físicos del tensor original, y se contraen por pares hacia tensores de capas superiores, reduciendo progresivamente el número de índices hasta llegar a un único tensor raíz que produce la salida \citebox{bhatia2025application}.
+ 
+Formalmente, en un TTN binario con $N = 2^L$ índices de entrada y $L$ capas, cada tensor local tiene tres índices: dos de entrada (provenientes de la capa inferior) y uno de salida (conectado a la capa superior), con dimensión de enlace $D$. El número total de parámetros escala como $\mathcal{O}(N D^3)$, comparable al MPS, pero con una diferencia estructural crucial: la distancia entre cualquier par de índices físicos a través de la red es a lo sumo $\mathcal{O}(\log N)$ (la profundidad del árbol), frente a $\mathcal{O}(N)$ en el MPS \citebox{wang2023tensor}.
+ 
+Esta propiedad hace que el TTN sea más eficiente que el MPS para capturar correlaciones de largo alcance. En física cuántica, el TTN se utiliza para representar estados con una estructura de entrelazamiento jerárquica, como la que aparece en ciertos sistemas con simetría de escala. En aprendizaje automático, la estructura de árbol resulta natural para datos con organización jerárquica intrínseca \citebox{wang2023tensor}.
+ 
+Sin embargo, el TTN tiene una limitación: al ser una estructura de árbol sin ciclos, la información entre dos ramas distintas solo puede propagarse a través del nodo ancestro común. Esto limita la capacidad de la red para capturar correlaciones entre modos que se encuentran en ramas separadas del árbol. Esta restricción motivó el desarrollo de arquitecturas más sofisticadas como la MERA.
+ 
+\noindent\textbf{Multi-scale Entanglement Renormalization Ansatz (MERA).}
+ 
+La \textit{Multi-scale Entanglement Renormalization Ansatz} (MERA) fue introducida por Vidal en 2007 como una Tensor Network capaz de representar eficientemente los estados fundamentales de sistemas cuánticos críticos, es decir, sistemas en los que las correlaciones decaen como una ley de potencias en lugar de exponencialmente \citebox{vidal2007mera}.
+ 
+La innovación clave de la MERA respecto al TTN es la inclusión de tensores adicionales denominados \textit{disentanglers} (desentrelazadores). En cada capa de la estructura jerárquica, antes de aplicar los tensores de renormalización (que reducen el número de grados de libertad, como en un TTN), se aplican disentanglers que actúan sobre pares de sitios vecinos para eliminar el entrelazamiento de corto alcance. Los tensores de renormalización se encargan entonces de capturar las correlaciones a escalas mayores. La alternancia de capas de disentanglers y capas de renormalización permite a la MERA representar correlaciones a todas las escalas de longitud simultáneamente \citebox{wang2023tensor}.
+ 
+Desde el punto de vista de la física, la MERA es la única topología de Tensor Network que puede representar fielmente estados con correcciones logarítmicas a la ley de área --la situación típica en sistemas cuánticos críticos--, donde el MPS requeriría una dimensión de enlace que crece polinomialmente con el tamaño del sistema \citebox{vidal2007mera}. La estructura jerárquica de la MERA está íntimamente relacionada con el concepto de grupo de renormalización, lo que le confiere una interpretación física muy rica: cada capa de la MERA corresponde a observar el sistema a una escala de longitud diferente.
+ 
+En aprendizaje automático, la MERA resulta prometedora para el procesamiento de datos con dependencias a múltiples escalas, como imágenes con estructuras tanto locales como globales \citebox{wang2023tensor}. No obstante, su mayor complejidad estructural (más parámetros y contracciones más costosas que el MPS o el TTN) hace que su uso práctico sea más limitado hasta la fecha.
+ 
+\noindent\textbf{Projected Entangled Pair States (PEPS).}
+ 
+Los \textit{Projected Entangled Pair States} (PEPS) constituyen la generalización natural del MPS a dos dimensiones. Mientras que en el MPS cada tensor se conecta a lo sumo con dos vecinos (formando una cadena), en PEPS cada tensor se conecta con cuatro vecinos, formando una red bidimensional que refleja directamente la geometría de una rejilla cuadrada \citebox{verstraete2004peps}.
+ 
+Para un sistema bidimensional de $M \times N$ sitios, cada tensor local en PEPS tiene un índice físico de dimensión $d$ y cuatro índices virtuales (arriba, abajo, izquierda, derecha) de dimensión $D$. Esto permite capturar de forma natural las correlaciones espaciales bidimensionales que caracterizan, por ejemplo, los estados fundamentales de sistemas cuánticos definidos sobre rejillas planas \citebox{wang2023tensor}.
+ 
+PEPS satisface la ley de área de forma nativa en dos dimensiones: la entropía de entrelazamiento entre una región $A$ y su complemento escala con el perímetro de $A$, exactamente como predicen los resultados teóricos para estados de baja energía en sistemas bidimensionales \citebox{bhatia2025application}. Esto convierte a PEPS en la arquitectura tensorial teóricamente más adecuada para datos con estructura espacial bidimensional, como las imágenes.
+ 
+Sin embargo, PEPS presenta una desventaja computacional significativa: la contracción exacta de una red PEPS es un problema computacionalmente intratable (\#P-difícil), a diferencia del MPS, donde la contracción exacta tiene un coste polinomial. En la práctica, esto obliga a utilizar métodos de contracción aproximada, lo que introduce errores adicionales y limita el tamaño de las dimensiones de enlace que pueden utilizarse \citebox{wang2023tensor}. A pesar de esta limitación, PEPS ha demostrado resultados competitivos en clasificación de imágenes, alcanzando rendimientos comparables a los de arquitecturas clásicas como GoogLeNet, VGG-16 y AlexNet \citebox{2024arXiv240411277M}.
+ 
+\noindent\textbf{Comparativa y selección de topología.}
+ 
+La elección de la topología adecuada para una tarea concreta depende de dos factores: la estructura de correlaciones que se desea capturar y las restricciones computacionales disponibles. En la \tabref{tab: comparativa_topologias} se resumen las características principales de las cuatro topologías descritas.
+ 
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|l|c|c|X|}
+\hline
+\textbf{Topología} & \textbf{Parámetros} & \textbf{Correlaciones} & \textbf{Aplicación principal} \\
+\hline
+MPS / TT & $\mathcal{O}(NdD^2)$ & Exponenciales & Sistemas 1D; clasificación con datos linearizados. \\
+\hline
+TTN & $\mathcal{O}(ND^3)$ & Jerárquicas & Datos con estructura multiescala; sistemas jerárquicos. \\
+\hline
+MERA & $\mathcal{O}(ND^4)$ & Ley de potencias & Sistemas críticos; datos con correlaciones a todas las escalas. \\
+\hline
+PEPS & $\mathcal{O}(NdD^4)$ & 2D nativas & Sistemas 2D; imágenes con estructura espacial. \\
+\hline
+\end{tabularx}
+\caption{Comparativa de las principales topologías de Tensor Networks. $N$ es el número de sitios, $D$ la dimensión de enlace y $d$ la dimensión local.}
+\label{tab: comparativa_topologias}
+\end{table}
+ 
+En el contexto de este trabajo, las arquitecturas de mayor interés son el MPS/TT --por su simplicidad, su conexión directa con el DMRG y la existencia de implementaciones maduras-- y las redes jerárquicas (TTN y DTTN), que han demostrado recientemente un rendimiento competitivo en tareas de clasificación de imágenes complejas \citebox{wang2023tensor}.
+
+\section{Clasificación de imágenes con Tensor Networks}
+ 
+Las dos secciones anteriores han presentado, por un lado, los fundamentos del Deep Learning y, por otro, la teoría de Tensor Networks desde su origen en la física cuántica hasta sus principales topologías y descomposiciones. A partir de aquí, el siguiente paso natural es unir ambos marcos. Esta sección describe, por tanto, el procedimiento completo mediante el cual una Tensor Network puede utilizarse como modelo de clasificación supervisada de imágenes, siguiendo el enfoque propuesto por Stoudenmire y Schwab \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+
+\subsection{Codificación de los datos de entrada}
+
+El primer paso para aplicar una Tensor Network a la clasificación de imágenes consiste en transformar los datos de entrada --los píxeles de una imagen-- en un objeto tensorial con la estructura adecuada. Esta transformación se denomina \textit{mapa de características} (\textit{feature map}) y su diseño está directamente inspirado en la mecánica cuántica.
+ 
+Consideremos una imagen en escala de grises con $N$ píxeles, donde el valor de cada píxel $x_j \in [0,1]$ ($0$ para blanco, $1$ para negro). El procedimiento consiste en dos pasos. En primer lugar, se aplica un \textit{mapa de características local} $\phi^{s_j}(x_j)$ que transforma cada píxel individual en un vector de dimensión $d$, denominada \textit{dimensión local}. En segundo lugar, se construye el mapa de características global $\Phi(\mathbf{x})$ como el producto tensorial de todos los mapas locales:
+ 
+\begin{equation} \label{eq: feature_map}
+    \Phi^{s_1 s_2 \cdots s_N}(\mathbf{x}) = \phi^{s_1}(x_1) \otimes \phi^{s_2}(x_2) \otimes \cdots \otimes \phi^{s_N}(x_N)
+\end{equation}
+ 
+El tensor $\Phi(\mathbf{x})$ resultante es un tensor de orden $N$ con $d^N$ componentes, pero posee una estructura muy particular: es un tensor de rango 1 (producto de $N$ vectores). En el lenguaje de la mecánica cuántica, $\Phi(\mathbf{x})$ tiene la estructura de un \textit{estado producto} o función de onda no entrelazada \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+La elección concreta del mapa local $\phi^{s_j}(x_j)$ determina las propiedades del modelo. Para el caso $d = 2$, Stoudenmire y Schwab propusieron el mapa:
+ 
+\begin{equation} \label{eq: local_feature_map}
+    \phi^{s_j}(x_j) = \left[\cos\left(\frac{\pi}{2} x_j\right),\; \sin\left(\frac{\pi}{2} x_j\right)\right]
+\end{equation}
+ 
+que tiene una interpretación física elegante: cada píxel se codifica como el estado normalizado de un \textit{qubit}, donde el estado $\ket{0}$ (``espín arriba'') corresponde a un píxel blanco, el estado $\ket{1}$ (``espín abajo'') a un píxel negro, y cualquier valor intermedio de gris se representa como una superposición cuántica de ambos estados \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. La elección trigonométrica garantiza que $\|\phi(x_j)\| = 1$ para todo $x_j$, lo que implica que $\|\Phi(\mathbf{x})\| = 1$ para cualquier imagen. Esta normalización es análoga a la exigencia de normalización de las funciones de onda en mecánica cuántica.
+ 
+Para dimensiones locales $d > 2$, el mapa puede generalizarse utilizando estados coherentes de espín, lo que permite capturar variaciones más finas en los valores de los píxeles a costa de un mayor número de parámetros \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+\subsection{Función de decisión y clasificación multiclase}
+
+Una vez construida esta representación tensorial de la imagen, el siguiente paso consiste en definir cómo se lleva a cabo la clasificación. Para una tarea con $N_L$ etiquetas posibles $\ell \in \{1, 2, \ldots, N_L\}$, se introduce un tensor de pesos $W^\ell$ de orden $N+1$ (los $N$ índices del mapa de características más un índice de etiqueta $\ell$), y la función de decisión viene dada por:
+ 
+\begin{equation} \label{eq: decision_function}
+    f^\ell(\mathbf{x}) = W^\ell \cdot \Phi(\mathbf{x}) = \sum_{s_1, s_2, \ldots, s_N} W^\ell_{s_1 s_2 \cdots s_N} \; \phi^{s_1}(x_1) \, \phi^{s_2}(x_2) \cdots \phi^{s_N}(x_N)
+\end{equation}
+ 
+La imagen $\mathbf{x}$ se clasifica con la etiqueta $\ell^*$ para la cual $|f^\ell(\mathbf{x})|$ es máximo \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+Es importante destacar la naturaleza de esta operación: aunque la función de decisión $f^\ell$ es lineal en el espacio de características $d^N$-dimensional, es altamente no lineal en el espacio de entrada original (el de los píxeles). En efecto, la función $f^\ell(\mathbf{x})$ es un polinomio de grado $N$ en las funciones trigonométricas de los valores de los píxeles. Esta es precisamente la estrategia que emplean las Tensor Networks para lograr separabilidad lineal sin recurrir a funciones de activación no lineales, a diferencia de las redes neuronales convencionales \citebox{wang2023tensor}.
+ 
+El tensor de pesos $W^\ell$ tiene, en principio, $N_L \cdot d^N$ componentes --un número exponencialmente grande--. Para hacerlo tratable, se representa como una Tensor Network. En el enfoque de Stoudenmire y Schwab, $W^\ell$ se aproxima como un MPS:
+ 
+\begin{equation} \label{eq: MPS_weights}
+    W^\ell_{s_1 s_2 \cdots s_N} = \sum_{\{\alpha\}} A^{\alpha_1}_{s_1} A^{\alpha_1 \alpha_2}_{s_2} \cdots A^{\ell; \alpha_j \alpha_{j+1}}_{s_j} \cdots A^{\alpha_{N-1}}_{s_N}
+\end{equation}
+ 
+donde el índice de etiqueta $\ell$ se coloca en uno de los tensores del MPS (su posición es arbitraria y puede moverse a cualquier sitio mediante operaciones de SVD). La dimensión de enlace $D$ del MPS controla la capacidad del modelo: un $D$ demasiado pequeño puede resultar en \textit{underfitting}, mientras que un $D$ demasiado grande puede provocar \textit{overfitting} \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+\subsection{Optimización del modelo: el algoritmo de barrido}
+
+Una vez definida la función de decisión y fijada la estructura MPS para el tensor de pesos, queda por explicar cómo se ajustan sus parámetros. La optimización se realiza mediante un algoritmo de barrido (\textit{sweeping algorithm}) directamente inspirado en el DMRG de la física cuántica. El procedimiento minimiza una función de coste cuadrática:
+ 
+\begin{equation} \label{eq: cost_function}
+    C = \frac{1}{2} \sum_{n=1}^{N_T} \sum_{\ell} \left( f^\ell(\mathbf{x}_n) - \delta^\ell_{L_n} \right)^2
+\end{equation}
+ 
+donde $N_T$ es el número de muestras de entrenamiento, $\mathbf{x}_n$ es la $n$-ésima imagen, $L_n$ es su etiqueta correcta, y $\delta^\ell_{L_n}$ es la delta de Kronecker (igual a 1 si $\ell = L_n$ y 0 en caso contrario) \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+El algoritmo procede de la siguiente manera. En cada paso, se seleccionan dos tensores vecinos del MPS en los sitios $j$ y $j+1$, y se contraen para formar un único \textit{tensor de enlace} $B^\ell$. A continuación, se calcula el gradiente de la función de coste respecto a $B^\ell$ y se actualiza este tensor mediante un paso de descenso de gradiente. Tras la actualización, el tensor $B^\ell$ se descompone de nuevo en dos tensores separados mediante una SVD, restaurando la forma MPS. En este paso, solo se conservan los $D$ valores singulares más grandes, lo que permite controlar adaptativamente la dimensión de enlace \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+Este procedimiento se repite ``barriendo'' de izquierda a derecha y de derecha a izquierda a lo largo de toda la cadena MPS, de forma análoga a como el DMRG barre la cadena de espines en un problema de muchos cuerpos. La convergencia es típicamente rápida: Stoudenmire y Schwab reportaron que dos o tres barridos completos eran suficientes para alcanzar una buena convergencia en el conjunto MNIST, logrando un error de test inferior al $1\%$ con una dimensión de enlace de $D = 120$ \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+Entre las propiedades destacables del algoritmo se encuentran: el coste computacional escala linealmente con el tamaño de la entrada $N$ y con el número de muestras de entrenamiento $N_T$; la dimensión de enlace puede adaptarse localmente en cada enlace del MPS, concentrando recursos en las regiones del modelo que más lo necesitan; y la truncación por SVD proporciona una regularización implícita del modelo, equivalente a imponer una restricción de bajo rango sobre el tensor de pesos \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+Un aspecto práctico relevante es la linearización de los píxeles. Dado que el MPS impone una estructura unidimensional, los píxeles de la imagen bidimensional deben ordenarse en una secuencia lineal. Stoudenmire y Schwab emplearon un orden en zigzag que mantiene la proximidad espacial entre píxeles vecinos en la medida de lo posible \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. La sensibilidad del modelo al orden de linearización es una de las motivaciones para explorar topologías bidimensionales como PEPS o jerárquicas como TTN y DTTN.
+ 
+\subsection{Conexión con métodos kernel}
+
+Además de esta lectura en términos de redes tensoriales, el marco descrito admite una interpretación alternativa dentro de la teoría de aprendizaje con \textit{kernels}, que proporciona una perspectiva complementaria sobre el funcionamiento de estos clasificadores.
+ 
+En el aprendizaje con kernels, la clasificación se realiza en un espacio de características de alta dimensión sin construir explícitamente la representación de los datos en dicho espacio, sino a través de una función kernel $K(\mathbf{x}, \mathbf{x}') = \Phi(\mathbf{x}) \cdot \Phi(\mathbf{x}')$ que mide la similitud entre dos entradas. El mapa de características tensorial de la \eqrefbox{eq: feature_map} define implícitamente un kernel que es el producto de $N$ kernels locales, uno por cada componente de la entrada:
+ 
+\begin{equation} \label{eq: kernel}
+    K(\mathbf{x}, \mathbf{x}') = \prod_{j=1}^{N} \sum_{s_j} \phi^{s_j}(x_j) \, \phi^{s_j}(x'_j) = \prod_{j=1}^{N} k(x_j, x'_j)
+\end{equation}
+ 
+donde $k(x_j, x'_j) = \cos\left(\frac{\pi}{2}(x_j - x'_j)\right)$ para el mapa local de la \eqrefbox{eq: local_feature_map}. Kernels de este tipo --productos de kernels locales independientes-- son adecuados para datos en los que no se asume ninguna relación previa entre las distintas componentes del vector de entrada antes del aprendizaje \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+La diferencia fundamental entre un clasificador kernel clásico (como una máquina de vectores de soporte) y el enfoque tensorial es cómo se representan y optimizan los pesos. En un clasificador kernel, los pesos se expresan como combinación lineal de los vectores de entrenamiento y el coste de evaluación crece con el número de muestras. En el enfoque tensorial, los pesos se representan como un MPS, cuyo coste de evaluación es independiente del número de muestras y depende únicamente de la dimensión de enlace $D$ \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}.
+ 
+Además, la estructura MPS del tensor de pesos proporciona una selección implícita de características. Stoudenmire y Schwab demostraron que un MPS con tensor central $C^{\ell}_{\alpha_i \alpha_{i+1}}$ en un enlace $i$ puede interpretarse como un modelo que actúa en tres etapas: primero, la entrada se mapea al espacio de características exponencial $\Phi(\mathbf{x})$; después, las matrices unitarias $U$ y $V$ del MPS proyectan este espacio exponencial a un subespacio de dimensión $D^2$; y finalmente, la clasificación se realiza en este subespacio reducido \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Esta interpretación revela que el MPS no solo parametriza eficientemente el tensor de pesos, sino que simultáneamente aprende a seleccionar las características más relevantes para la tarea de clasificación, de forma análoga a como las capas ocultas de una red neuronal aprenden representaciones internas de los datos.
+
+\chapter{OBJETIVOS}
+
+\section{Objetivos generales}
+El objetivo general del trabajo consiste en ampliar el conocimiento actual sobre la aplicación de las Tensor Networks como paradigma alternativo al deep learning convencional en tareas de clasificación de imágenes, evaluando su viabilidad, rendimiento y eficiencia mediante la implementación y experimentación con distintas arquitecturas tensoriales.
+
+Para ello, el proyecto contempla el estudio en profundidad del estado del arte en modelos de inteligencia artificial basados en Tensor Networks, la implementación de al menos dos arquitecturas tensoriales a partir de la literatura científica, su entrenamiento y evaluación utilizando recursos de computación de altas prestaciones (HPC) del servidor Lorca de la Universidad Europea, y la comparación de sus resultados frente a modelos clásicos de deep learning sobre conjuntos de datos de referencia.
+
+De forma complementaria, el proyecto persigue adquirir experiencia práctica en el uso de herramientas computacionales propias del ámbito de la investigación en inteligencia artificial, incluyendo el manejo de entornos HPC, el uso de librerías especializadas como PyTorch y TensorKrowch, y las buenas prácticas de documentación y reproducibilidad del código científico.
+
+\section{Objetivos espec\'ificos}
+
+\begin{enumerate}
+
+	\item Realizar una revisión del estado del arte de los modelos de inteligencia artificial basados en Tensor Networks aplicados a la clasificación de imágenes, analizando las arquitecturas más relevantes y sus principales resultados.
+
+	\item Estudiar en detalle distintos modelos tensoriales para clasificación de imágenes, con el fin de comprender su funcionamiento y sus diferencias fundamentales.
+
+	\item Implementar al menos dos modelos de inteligencia artificial basados en Tensor Networks para tareas de clasificación de imágenes, a partir de descripciones presentes en la literatura científica.
+
+	\item Entrenar y evaluar los modelos implementados utilizando recursos de computación de altas prestaciones (HPC), familiarizándose con el uso de servidores, entornos de ejecución y herramientas básicas de gestión de trabajos.
+
+	\item Comparar el rendimiento de los modelos basados en Tensor Networks con modelos de inteligencia artificial convencionales, empleando conjuntos de datos de referencia en clasificación de imágenes.
+
+	\item Analizar los resultados obtenidos en términos de precisión, eficiencia computacional y comportamiento del entrenamiento, identificando las principales ventajas y limitaciones de los enfoques tensoriales.
+
+	\item Documentar el desarrollo del proyecto, describiendo de forma clara los modelos estudiados, las implementaciones realizadas y los resultados obtenidos.
+
+	\item Preparar y organizar un repositorio de código que recoja las implementaciones y experimentos realizados, garantizando su claridad, reproducibilidad y correcta documentación.
+	
+\end{enumerate}
+
+\section{Objetivos que quedan fuera del proyecto}
+
+\begin{itemize}
+
+	\item Estudiar modelos de inteligencia artificial no aplicados a la clasificación de imágenes y que no estén basados en Tensor Networks.
+
+	\item Evaluar los modelos en conjuntos de datos distintos de los considerados en el proyecto, o realizar comparaciones extensivas en múltiples benchmarks adicionales.
+
+	\item Ejecutar los modelos en hardware cuántico real, más allá de enfoques cuántico-inspirados ejecutados en sistemas clásicos.
+
+	\item Desarrollar aplicaciones orientadas a entornos industriales o sistemas en producción a partir de los modelos estudiados.
+	
+\end{itemize}
+
+\section{Beneficios del proyecto}
+
+Desde el punto de vista científico, este proyecto contribuye a ampliar el conocimiento empírico sobre las Tensor Networks como herramienta de aprendizaje automático. Si bien el fundamento teórico de estas arquitecturas está bien establecido en el ámbito de la física cuántica y matemática, su comportamiento práctico en tareas de clasificación de imágenes sigue siendo un área activa de investigación. El trabajo aportará evidencia experimental concreta sobre estas cuestiones.
+
+Desde el punto de vista computacional, el proyecto favorece el desarrollo de modelos de IA más eficientes en el uso de parámetros. Los modelos basados en Tensor Networks permiten, en principio, representar funciones complejas con un número significativamente menor de parámetros que las redes neuronales profundas convencionales. Esto tiene implicaciones directas sobre el coste energético y computacional del entrenamiento, un aspecto de creciente relevancia en la investigación en inteligencia artificial.
+
+Desde el punto de vista formativo, el proyecto supone una experiencia integral en investigación aplicada: comprende la revisión crítica de literatura científica, el diseño e implementación de experimentos reproducibles, el uso de infraestructuras HPC y el aprendizaje de herramientas y flujos de trabajo propios del ámbito profesional de la investigación en IA. Estos conocimientos y competencias son directamente transferibles a entornos académicos y laborales en el campo de la inteligencia artificial y la computación científica
+
+\chapter{DESARROLLO DEL TFG}
+
+\section{Planificaci\'on del trabajo fin de grado}
+
+\begin{figure}[htbp]
+\centering
+\makebox[\textwidth]{%
+  \begin{minipage}{1.1\textwidth}
+    \centering
+    \includegraphics[scale=0.6]{figures/GANTT .png}
+    \caption{Planificación por semanas del TFG, cada circulo representa una semana teniendo febrero 3 semanas (porque empiezo el 9 de Febrero), marzo 4 semanas, abril cuatro semanas y por último mayo tendrá otras cuatro semanas. De esta manera se cumplen entre 500 y 600 horas dedicadas al TFG.}
+    \label{fig: GANTT}
+  \end{minipage}%
+}
+\end{figure}
+
+\begin{itemize}
+\item \textbf{Semanas 1--3: Introducción y fundamentos de Tensor Networks}
+
+Durante las primeras semanas se adquirirán los conocimientos fundamentales y teóricos sobre Tensor Networks. 
+\begin{itemize}
+\item Estudio de la notación y representaciones básicas de Tensor Networks mediante material audiovisual.
+\item Lectura y análisis de artículos científicos relevantes, con especial atención a modelos tensoriales aplicados a clasificación de imágenes.
+\item Estudio de apuntes y material teórico relacionado con Tensor Networks y su conexión con la física de sistemas cuánticos.
+\end{itemize}
+
+\item \textbf{Semanas 4--6: Estudio de modelos MPS para clasificación de imágenes}
+
+En esta etapa se profundizará en el uso de Matrix Product States como modelos de clasificación de imágenes:
+\begin{itemize}
+\item Análisis del funcionamiento de clasificadores basados en MPS y estudio de sus fuentes de error.
+\item Revisión de implementaciones existentes y comprensión de los procedimientos de entrenamiento y evaluación.
+\item Búsqueda y selección de conjuntos de datos adecuados en plataformas como Kaggle o Hugging Face.
+\end{itemize}
+
+\item \textbf{Semanas 7--8: Formación en herramientas computacionales}
+
+Durante este periodo se adquirirá el conocimiento práctico necesario para el desarrollo del proyecto:
+\begin{itemize}
+\item Aprendizaje de comandos básicos de Bash y trabajo en entornos de servidor.
+\item Uso de GitHub para el control de versiones y la organización del código.
+\item Estudio de buenas prácticas de organización de proyectos y documentación.
+\item Aprendizaje en profundidad de PyTorch para la implementación de modelos de inteligencia artificial.
+\end{itemize}
+
+\item \textbf{Semanas 9--13: Implementación y experimentación}
+
+En esta fase se llevará a cabo la implementación y entrenamiento de los modelos seleccionados:
+\begin{itemize}
+\item Implementación de modelos basados en Tensor Networks para clasificación de imágenes.
+\item Entrenamiento de los modelos utilizando recursos de computación de altas prestaciones (HPC).
+\item Evaluación del rendimiento de los modelos y comparación con modelos de inteligencia artificial convencionales.
+\end{itemize}
+
+\item \textbf{Semanas 13--15: Análisis de resultados y redacción}
+
+En la etapa final se realizará el análisis de los resultados obtenidos y la documentación del trabajo:
+\begin{itemize}
+\item Análisis crítico de los resultados y discusión de las conclusiones.
+\item Redacción de la memoria del Trabajo Fin de Grado.
+\item Organización final del repositorio de código y preparación de la entrega.
+\end{itemize}
+\end{itemize}
+
+\section{Descripci\'on de la soluci\'on, metodolog\'ias y herramientas empleadas}
+
+\subsection{Recursos requeridos}
+A continuación se enumeran los recursos técnicos utilizados para la ejecución del trabajo:
+
+\begin{itemize}
+	
+	\item Recursos computacionales:
+	\begin{itemize}
+    		\item Servidor HPC Lorca de la Universidad Europea de Madrid: para el entrenamiento de los modelos con recursos de computación de altas prestaciones.
+    		\item Ordenador personal: para el desarrollo, pruebas locales y escritura de la memoria.
+	\end{itemize}
+
+	\item Herramientas de software
+	\begin{itemize}
+   		\item Python (lenguaje de programación principal).
+   		 \item PyTorch (framework de deep learning).
+    		\item TensorKrowch (librería para implementación de Tensor Networks).
+   		 \item NumPy, SciPy, Matplotlib, Seaborn (librerías científicas y de visualización).
+    		\item GitHub (control de versiones y gestión del repositorio de código).
+    		\item Bash / Linux (gestión del entorno HPC y automatización de trabajos).
+    		\item Docker / entornos virtuales (gestión de dependencias y reproducibilidad).
+	\end{itemize}
+
+	\item Recursos bibliográficos y de datos:
+	\begin{itemize}
+   		\item Artículos científicos de referencia (véase sección de Referencias).
+   		\item Conjuntos de datos públicos: MNIST, OlivettiFaces (obtenidos de repositorios como Kaggle o Hugging Face).
+	\end{itemize}
+	
+\end{itemize}
+
+\section{Resultados del TFG}
+Conforme a los objetivos espec\'ificos, describe los resultados finales obtenidos.
+
+Puedes a\~nadir una descripci\'on de cambios durante el TFG respecto a los objetivos iniciales, y comentarios que quieras incluir de c\'omo has desarrollado las distintas actividades.
+
+\chapter{DISCUSI\'ON}
+
+Esta secci\'on es m\'as habitual en trabajos de tipo ``cient\'ifico'' o de ``investigaci\'on'', donde uno presenta brevemente los resultados principales y los discute, pero tambi\'en puede utilizarse en otro tipo de trabajos.
+
+Puedes incluir secciones espec\'ificas para discutir cuestiones como: limitaciones del estudio, limitaciones de la tecnolog\'ia empleada, cambios respecto a objetivos planteados inicialmente.
+
+Puedes incluir respuestas a preguntas del tipo: \textquestiondown la metodolog\'ia inicialmente pensada ha sido \'util?, \textquestiondown he tenido que adaptarme a cambios a lo largo del proyecto?, \textquestiondown qu\'e cambios han sido y c\'omo he adaptado el proyecto para poder manejar esos cambios?, \textquestiondown qu\'e impacto ha tenido el resultado de mi proyecto?
+
+\chapter{CONCLUSIONES}
+\section{Conclusiones del trabajo}
+Breve descripci\'on objetiva del resultado en relaci\'on al objetivo general de tu TFG.
+
+\section{Conclusiones personales}
+Describe tus impresiones y experiencia personal durante el desarrollo del TFG, o destacar la importancia que tiene el tema para ti, lo que has aprendido, o la trascendencia que ha tenido para ti o para otros este trabajo.
+
+\chapter{FUTURAS L\'INEAS DE TRABAJO}
+Es importante destacar en este apartado las l\'ineas con las que se podr\'ia continuar tu trabajo. Indica todo lo que has anotado como futuro trabajos durante el desarrollo del TFG, o aquellos aspectos que estaban fuera del alcance, pero que son interesantes para desarrollar a futuro el valor de los resultados de tu trabajo.
+
+\renewcommand{\bibname}{REFERENCIAS}
+
+\bibliographystyle{unsrt}
+\bibliography{bibliografia}
+\addcontentsline{toc}{chapter}{REFERENCIAS}
+
+\chapter*{ANEXOS}
+\addcontentsline{toc}{chapter}{ANEXOS}
+Sirven para incluir documentaci\'on complementaria (planos, circuitos, c\'odigo, ficheros de configuraci\'on, especificaciones t\'ecnicas y hojas de caracter\'isticas, fichas explicativas, resultado de encuestas, reglamentaci\'on y normativas requeridas, etc.).
+
+\clearpage
+\thispagestyle{empty}
+\vspace*{\fill}
+\begin{center}
+[P\'AGINA INTENCIONADAMENTE EN BLANCO]
+\end{center}
+\vspace*{\fill}
+
+% ============================================================================
+% FIN
+% ============================================================================
+\end{document}
