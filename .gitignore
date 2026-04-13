@@ -25,3 +25,6 @@
 # Temporary build directories
 _minted*
 tmp/
+
+# Local thesis build output
+docs/thesis/main.pdf
