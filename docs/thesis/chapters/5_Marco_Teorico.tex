@@ -1,0 +1,292 @@
+\chapter{MARCO TEÓRICO}
+
+\section{Deep learning y clasificación de imágenes}
+
+Antes de explicar el concepto de \textit{deep learning} es importante entender que es una red neuronal. Una red neuronal es una estructura computacional formada por un conjunto de unidades de procesamiento simples, denominados neuronas. Éstas están interconectadas mediante pesos sinápticos ajustables, llamados en inglés \textit{weights} y \textit{biases}. Cada neurona recibe una serie de entradas, a las cuales llamaremos \textit{inputs}; se calcula una suma ponderada de las mismas y se les aplican una función de activación para producir una salida, la cual llamaremos \textit{output}. El comportamiento de la red, queda determinado por los valores de estos pesos, que son modificados durante el entrenamiento con el objetivo de minimizar una función de error entre los \textit{outputs} y las respuestas esperadas.
+
+Formalizando esta descripción, dada una entrada $\mathbf{x} = (x_1, x_2, \ldots, x_n) \in \mathbb{R}^n$, la operación de una única neurona se expresa como:
+
+\begin{equation} \label{eq: neurona}
+    y = \sigma\left(\sum_{i=1}^{n} w_i x_i + b\right) = \sigma(\mathbf{w}^\top \mathbf{x} + b)
+\end{equation}
+
+donde $\mathbf{w} = (w_1, w_2, \ldots, w_n)$ es el vector de pesos sinápticos, $b$ es el sesgo (\textit{bias}), y $\sigma: \mathbb{R} \to \mathbb{R}$ es la función de activación. El argumento de $\sigma$ es una transformación afín de la entrada: un producto escalar seguido de una traslación. La no linealidad introducida por $\sigma$ es esencial, pues sin ella la composición de múltiples capas lineales se reduciría a una única transformación lineal, independientemente de la profundidad de la red \citebox{schmidhuber2015deep}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{figures/Simple_Neural_network.png}
+    \caption{Esquema de una red neuronal simple. \citebox{firefly_ann_pretraining_researchgate_2026}}
+    \label{fig: neural_network}
+\end{figure}
+
+Las funciones de activación más utilizadas en la práctica incluyen la sigmoide $\sigma(z) = 1/(1+e^{-z})$, la tangente hiperbólica $\sigma(z) = \tanh(z)$, y la unidad lineal rectificada (ReLU) $\sigma(z) = \max(0, z)$. La elección de la función de activación tiene consecuencias importantes sobre la dinámica del entrenamiento: funciones como la sigmoide pueden producir gradientes que se desvanecen en redes profundas, mientras que la ReLU mitiga parcialmente este problema \citebox{schmidhuber2015deep}.
+
+Una capa completa de la red consiste en $m$ neuronas que operan en paralelo sobre la misma entrada, produciendo un vector de salida $\mathbf{y} \in \mathbb{R}^m$:
+
+\begin{equation} \label{eq: capa}
+    \mathbf{y} = \sigma(\mathbf{W}\mathbf{x} + \mathbf{b})
+\end{equation}
+
+donde $\mathbf{W} \in \mathbb{R}^{m \times n}$ es la matriz de pesos de la capa y $\mathbf{b} \in \mathbb{R}^m$ el vector de sesgos.
+
+Llegamos a la definición de \textit{deep learning}, que no es más que una red neuronal con muchas capas intermedias. La expresión matemática que define una \textit{deep learning} es una extensión de la\eqrefbox{eq: capa} pero para $L$ capas:
+
+\begin{equation} \label{eq: red_profunda}
+    f(\mathbf{x}) = \sigma_L(\mathbf{W}_L \cdots \sigma_2(\mathbf{W}_2 \, \sigma_1(\mathbf{W}_1 \mathbf{x} + \mathbf{b}_1) + \mathbf{b}_2) \cdots + \mathbf{b}_L)
+\end{equation}
+
+Los parámetros entrenables del modelo son el conjunto $\{\mathbf{W}_1, \mathbf{b}_1, \mathbf{W}_2, \mathbf{b}_2, \ldots, \mathbf{W}_L, \mathbf{b}_L\}$, cuyo número total crece con la anchura y la profundidad de la red.
+
+El entrenamiento de una red neuronal se formula como un problema de optimización. Dado un conjunto de entrenamiento $\{(\mathbf{x}_n, y_n)\}_{n=1}^{N_T}$, se define una \textit{función de coste} (o función de pérdida) $C$ que mide la discrepancia entre las predicciones del modelo $f(\mathbf{x}_n)$ y las etiquetas verdaderas $y_n$. El objetivo es encontrar los parámetros $\boldsymbol{\theta} = \{\mathbf{W}_l, \mathbf{b}_l\}$ que minimizan $C$:
+
+\begin{equation} \label{eq: optimizacion}
+    \boldsymbol{\theta}^* = \arg\min_{\boldsymbol{\theta}} \; C(\boldsymbol{\theta}) = \arg\min_{\boldsymbol{\theta}} \; \frac{1}{N_T} \sum_{n=1}^{N_T} \mathcal{L}(f(\mathbf{x}_n; \boldsymbol{\theta}), y_n)
+\end{equation}
+
+donde $\mathcal{L}$ es una función de pérdida por muestra (por ejemplo, el error cuadrático medio o la entropía cruzada). Este es un problema de minimización en un espacio de alta dimensión, que se resuelve mediante variantes del \textit{descenso de gradiente} \citebox{schmidhuber2015deep}.
+
+El algoritmo fundamental para calcular los gradientes necesarios es la \textit{backpropagation}, que aplica sistemáticamente la regla de la cadena del cálculo diferencial para propagar el error desde la capa de salida hacia las capas inferiores. Para un parámetro $\theta$ cualquiera de la red, el gradiente se calcula como:
+
+\begin{equation} \label{eq: backprop}
+    \frac{\partial C}{\partial \theta} = \frac{\partial C}{\partial \mathbf{y}_L} \cdot \frac{\partial \mathbf{y}_L}{\partial \mathbf{y}_{L-1}} \cdots \frac{\partial \mathbf{y}_{l+1}}{\partial \mathbf{y}_l} \cdot \frac{\partial \mathbf{y}_l}{\partial \theta}
+\end{equation}
+
+donde $\mathbf{y}_l$ es la salida de la capa $l$-ésima. La actualización de los parámetros sigue entonces la regla $\theta \leftarrow \theta - \eta \, \partial C / \partial \theta$, donde $\eta > 0$ es la tasa de aprendizaje.
+
+La diferencia fundamental entre las redes clásicas y las redes \textit{deep} radica en su capacidad de representación. Una red con una única capa oculta puede, en teoría, aproximar cualquier función continua con la suficiente anchura, pero resulta ineficiente para capturar estructuras jerárquicas, como las que están presentes en las imágenes o en el lenguaje natural \citebox{cichocki2016tensor}. Las \textit{deep learning}, en cambio, aprenden representaciones en múltiples niveles de abstracción: las capas más bajas detectan características primitivas como bordes o frecuencias, mientras que las superiores combinan estas primitivas para reconocer objetos complejos o conceptos semánticos \citebox{wang2023tensor}.
+
+En clasificación de imágenes, las redes convolucionales han sido especialmente relevantes porque incorporan localidad espacial y pesos compartidos. Estas dos propiedades son adecuadas para datos visuales: los píxeles vecinos tienden a estar relacionados, y los mismos patrones pueden aparecer en distintas regiones de la imagen. La \figref{fig: 1} muestra algunas topologías básicas de redes neuronales.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.78\linewidth]{figures/NeuralNetworks_recortada.png}
+    \caption{Esquema de topologías básicas de redes neuronales, desde el perceptrón hasta arquitecturas con capas ocultas y conexiones recurrentes \citebox{vanveen2019zoo}.}
+    \label{fig: 1}
+\end{figure}
+
+El éxito de estas arquitecturas no elimina sus limitaciones. Muchos modelos modernos alcanzan buenos resultados con un número elevado de parámetros y con un coste computacional considerable. Este TFG se sitúa en ese punto; estudia si las TN pueden proporcionar modelos de clasificación estructurados, capaces de representar funciones complejas mediante factorizaciones tensoriales controladas.
+
+\section{Tensores}
+
+Antes de profundizar en el mundo de las TN es conveniente sentar primero las bases. Lo primero es entender que un tensor. Un tensor lo podemos ver definido de diferentes formas dependiendo del campo en el que estemos trabajando.
+
+Desde un puesto de vista computacional, los tensores son \textit{arrays} multidimensionales que generalizan de forma natural los conceptos de escalar, vector y matriz a dimensiones arbitrariamente superiores. Desde un punto de vista físico-matemático, los tensor son objetos matemáticos de orden superior, que representan relaciones multidimensionales entre distintas variables o grados de libertad. Dicho de otra forma, un tensor de orden $N$ es un objeto cuyos elementos tienen $N$ índices y están asociados a $N$ vectores base. \[R^{I_1 \times I_2 \times \cdots \times I_N}\] donde $N$ es el número de modos y las longitudes $I_1, \ldots, I_N$ representan las dimensiones de cada modo. \citebox{wang2023tensor}
+
+Bajo esta definición, los escalares son tensores de orden cero, los vectores son tensores de orden 1, y las matrices son tensores de orden 2; todo caso superior constituye propiamente lo que en la literatura se denomina, tensor de alto orden. En la notación convencional, se distinguen los diferentes objetos según su orden: las letras minúsculas en cursiva ($a$) denotan escalares, las letras minúsculas en negrita ($\mathbf{a}$) denotan vectores, las letras mayúsculas en negrita ($\mathbf{A}$) denotan matrices, y las letras mayúsculas en tipografía cursiva en negrita ($\boldsymbol{\mathcal{A}}$) denotan tensores de orden superior. \citebox{wang2023tensor}
+
+La intuición física detrás de los tensores resulta natural cuando se considera, que muchos fenómenos del mundo real son inherentemente multidimensionales. Una imagen en color, por ejemplo, es un tensor de orden tres: altura, anchura y canales cromáticos. Los datos de resonancia magnética funcional (fMRI) constituyen tensores de orden cuatro. En mecánica cuántica, las funciones de onda variacionales de sistemas de muchos cuerpos son, igualmente, tensores de alto orden \citebox{wang2023tensor}.
+
+El concepto de tensor tiene raíces en el siglo XIX, ligado al desarrollo del cálculo diferencial absoluto por Ricci-Curbastro y Levi-Civita, aunque fue la formulación de la relatividad general por Einstein en 1915 la que consagró los tensores como herramienta fundamental de la física matemática. La descripción matemática de un Tensor es la siguiente:
+\begin{equation} \label{eq: 1}
+    \boldsymbol{\mathcal{T}} = \sum_{i_1, i_2,..., i_n} \tensor{T}{_{i_1}_{i_2}_{...}_{i_n}} \hat{b_{i_1}} \hat{b_{i_2}}...\hat{b_{i_n}}
+\end{equation}
+
+La operación central en el álgebra tensorial es la contracción tensorial. Dados dos tensores $\boldsymbol{\mathcal{T}}$ y $\boldsymbol{\mathcal{R}}$, de orden $n$ y $m$ respectivamente, con elementos $\tensor{T}{_{i_1}_{i_2}_{...}_{i_n}}$ y $\tensor{R}{_{j_1}_{j_2}_{...}_{j_m}}$ y en la misma base ortonormal $\hat{b}_{i}$, diremos que el tensor $\boldsymbol{\mathcal{C}}$ es la contracción de ambos tensores por sus último $q$ índices cuando:
+
+\begin{equation} \label{eq: 2}
+    \mathcal{C} = \sum_{i_1, i_2,...,i_{n-q},j_1,j_2,...,j_{m-q}} \tensor{C}{_{i_1}_{i_2}_{...}_{i_{n-q}}_{,}_{j_1}_{j_2}_{...}_{j_{m-q}}} \hat{b}_{i_1}\hat{b}_{i_2}...\hat{b}_{n-q}\hat{b}_{j_1}\hat{b}_{j_2}...\hat{b}_{m-q}
+\end{equation}
+
+siendo sus elementos
+
+\begin{equation} \label{eq: 3}
+    \tensor{C}{_{i_1}_{i_2}_{...}_{i_{n-q}}_{,}_{j_1}_{j_2}_{...}_{j_{m-q}}} = \sum_{k_1, k_2,...,k_{q}} \tensor{T}{_{i_1}_{i_2}_{...}_{i_{n-q}}_{,}_{k_1}_{k_2}_{...}_{k_{q}}} \tensor{R}{_{j_1}_{j_2}_{...}_{j_{m-q}}_{,}_{k_1}_{k_2}_{...}_{k_{q}}}
+\end{equation}
+
+De esta definición podemos sacar que la contracción tensorial es la operación mediante la cual dos tensores se contraen en un único tensor a lo largo de sus pares de índices asociados. Existen formas diferentes de contracciones, algunas implican más de dos tensores o un índice repetido en más de dos tensores o incluso repetidos en el mismo tensor. El caso más familiar de contracción tensorial es la multiplicación matricial: \[\mathbf{AB} = \sum_{k} A_{ik}B_{kj}\hat{b}_i\hat{b}_j\] o el producto escalar entre dos vectores: \[\vec{v}\cdot\vec{w} = \sum_i v_iw_i\]
+
+Entre las operaciones tensoriales fundamentales cabe destacar la traza de una matriz:
+
+\begin{equation}
+    Tr(A) = \sum_{i}A_{ii}
+\end{equation}
+
+Esto sería la contracción de una matriz consigo misma a través de sus índices repetidos. Debido a esta operación podemos ver que, un tensor también sirve como mapeo entre dos espacios vectoriales. Esto es un tensor, que recibe otro tensor y devuelve un tercer tensor.  Por cada índice contraído estamos mezclando componentes del tensor de entrada, reduciendo en 1 el orden del tensor de salida. Por otro lado, los índices que no han sido contraídos aumentarán en 1 el orden del tensor de salida.
+
+\section{Notación diagramática de Penrose y definición de Tensor Network}
+
+La representación algebraica de las contracciones tensoriales, aunque precisa, se vuelve rápidamente inmanejable a medida que aumenta el número de tensores y la complejidad de sus conexiones. Fue Roger Penrose \citebox{penrose1971applications} quien, a principios de la década de 1970, introdujo la notación diagramática para tensores, proporcionando una alternativa visual que transformó la manera en que se razona sobre estas estructuras. Los diagramas de redes tensoriales son hoy ampliamente utilizados para describir algoritmos cuánticos y algoritmos de \textit{machine learning} \citebox{wang2023tensor}.
+
+La idea central de la notación de Penrose es representar cada tensor como un nodo del que emanan tantas aristas como índices tenga el tensor. Concretamente: un nodo con una sola arista representa un vector $\mathbf{a} \in \mathbb{R}^I$; un nodo con dos aristas representa una matriz $\mathbf{A} \in \mathbb{R}^{I \times J}$; y un nodo con tres aristas representa un tensor $\boldsymbol{\mathcal{A}} \in \mathbb{R}^{I_1 \times I_2 \times I_3}$. Para indicar que un par de índices tensoriales está siendo contraído, ambas aristas se unen mediante una línea. Por ejemplo, la contracción de un tensor de orden uno con uno de orden dos es la multiplicación matriz-vector habitual. Las aristas que no se conectan a ningún otro tensor se denominan aristas libres, y el número de estas aristas en el diagrama resultante es precisamente el orden del tensor final. Dos nodos que no están unidos mediante aristas, representan el producto tensorial entre ellos.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/TN_invented.png}
+    \caption{Representación de una TN inventada. En esta representación se pueden identificar muchas de las operaciones descritas en esta sección. Elaboración propia.}
+    \label{fig:Invented_TN}
+\end{figure}
+
+La notación gráfica tensorial ofrece numerosas ventajas sobre la notación tradicional: en forma gráfica, los índices no necesitan nombres ni etiquetas; operaciones como el producto escalar, la traza tensorial y la contracción pueden expresarse sin notación adicional; y el orden del tensor resultante puede leerse simplemente contando el número de aristas libres. En particular, si en el diagrama no quedan aristas libres tras todas las contracciones, el resultado es necesariamente un escalar. Esta propiedad convierte los diagramas en una herramienta de verificación inmediata de la consistencia dimensional de operaciones complejas \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Sobre esta base visual puede introducirse ya, de manera natural, el concepto de \textit{Tensor Network (TN)}.
+
+Una TN es, en esencia, una representación gráfica de una ecuación multilineal entre diferentes tensores. Esta representación se apoya en la notación diagramática de Penrose, que con el tiempo se ha ido adaptando a las necesidades de disciplinas como la física, las matemáticas o la ciencia computacional \citebox{biamonte2017tensornetworksnutshell}. Puede verse un ejemplo en la \figref{fig: TensorNetwork}, donde aparece la TN que representa el 2-tensor $\tensor{T}{_{i}_{p}}$ cuyos elementos se obtienen mediante la operación de contracción
+
+\begin{equation} \label{eq: 5}
+\tensor{T}{_{i}_{p}} = \sum_{j, k, l, m, n, o}\tensor{A}{_{i}_{j}_{k}_{l}} \tensor{B}{_{j}_{m}}\tensor{C}{_{k}_{m}_{n}}\tensor{D}{_{l}_{o}}\tensor{E}{_{n}_{o}_{p}}
+\end{equation}
+
+\begin{figure}[H]
+\centering
+\makebox[\textwidth]{%
+  \begin{minipage}{1.1\textwidth}
+    \centering
+    \includegraphics[scale=0.6]{figures/TensorNetwork_example.png}
+    \caption{Ejemplo de representación diagramática para un tensor. Fuente:\citebox{2024arXiv240411277M}}
+    \label{fig: TensorNetwork}
+  \end{minipage}%
+}
+\end{figure}
+
+La motivación fundamental para el uso de las Tensor Networks es de naturaleza computacional. Un tensor de orden $N$ con dimensión $d$ en cada nodo tiene $d^N$ componentes, un número que crece exponencialmente con el orden del tensor, haciendo que su almacenamiento y manipulación directos sean computacionalmente prohibitivos; este fenómeno se conoce como la \textit{maldición de la dimensionalidad}. Las TN abordan este problema representando el tensor original no de forma explícita, sino como el resultado de contraer un conjunto de tensores de menor orden, cada uno con un número de parámetros manejable, de modo que la complejidad resultante escala de forma polinomial en lugar de exponencial \citebox{wang2023tensor, stoudenmire2017supervisedlearningquantuminspiredtensor}. Esta idea general se entiende mejor cuando se examina el contexto físico en el que surgió.
+
+\section{Tensor Networks y reducción de dimensionalidad}
+
+Una Tensor Network puede entenderse como una factorización de un tensor de alto orden en una colección de tensores de menor orden conectados entre sí. Su utilidad aparece cuando el tensor completo tendría un número de componentes inmanejable. Si un tensor tiene $N$ modos y cada modo tiene dimensión $d$, representarlo de forma explícita requiere $d^N$ componentes. Este crecimiento exponencial se conoce como \textit{maldición de la dimensionalidad}.
+
+En física cuántica, el mismo fenómeno aparece al describir sistemas de muchas partículas. Un estado cuántico general de $N$ subsistemas con dimensión local $d$ tiene coeficientes:
+
+\begin{equation} \label{eq: estado_general}
+    \ket{\psi} =
+    \sum_{s_1,\ldots,s_N}
+    C_{s_1\ldots s_N}
+    \ket{s_1}\otimes\cdots\otimes\ket{s_N}.
+\end{equation}
+
+El tensor $C_{s_1\ldots s_N}$ tiene $d^N$ componentes. Sin embargo, muchos estados físicamente relevantes poseen una estructura interna que permite representarlos de forma compacta. La idea clave es que no todos los estados ocupan todo el espacio posible con la misma complejidad; sus correlaciones o su entrelazamiento pueden estar limitados \citebox{schollwock2011dmrg}.
+
+Esta observación se traslada al \textit{machine learning} como una analogía útil. Un modelo de clasificación no necesita representar una función arbitraria sobre todos los píxeles posibles, sino una función que aproveche regularidades de los datos. Las Tensor Networks imponen una estructura de bajo rango o de conectividad concreta sobre el tensor de pesos, reduciendo el número de parámetros si las dimensiones internas, llamadas dimensiones de enlace, permanecen controladas \citebox{cichocki2016tensor, wang2023tensor}.
+
+\section{Descomposiciones tensoriales fundamentales}
+
+Para comprender cómo se construyen las representaciones mediante TN, conviene introducir primero algunas descomposiciones tensoriales básicas. La herramienta algebraica fundamental es la descomposición en valores singulares (SVD). Dada una matriz $\mathbf{A} \in \mathbb{R}^{M \times N}$, la SVD la factoriza como
+
+\begin{equation} \label{eq: svd}
+    \mathbf{A} = \mathbf{U} \boldsymbol{\Sigma} \mathbf{V}^\top ,
+\end{equation}
+
+donde $\mathbf{U}$ y $\mathbf{V}$ son matrices ortogonales, y $\boldsymbol{\Sigma}$ contiene los valores singulares $\sigma_1 \geq \sigma_2 \geq \cdots \geq 0$. La importancia de la SVD en TN se debe a que permite obtener la mejor aproximación de rango bajo en norma de Frobenius. Al conservar solo los $R$ valores singulares dominantes se obtiene la matriz de rango $R$ que minimiza el error de reconstrucción, resultado conocido como teorema de Eckart--Young \citebox{wang2023tensor}.
+
+Una primera generalización del rango matricial a tensores de orden superior es la descomposición CP. Dado un tensor $\boldsymbol{\mathcal{X}} \in \mathbb{R}^{I_1 \times \cdots \times I_N}$, CP lo aproxima como suma de $R$ tensores de rango 1:
+
+\begin{equation} \label{eq: CP}
+    \boldsymbol{\mathcal{X}} \approx \sum_{r=1}^{R} 
+    \mathbf{a}_r^{(1)} \circ \mathbf{a}_r^{(2)} \circ \cdots \circ \mathbf{a}_r^{(N)} ,
+\end{equation}
+
+donde $\circ$ denota el producto exterior y $R$ es el rango CP. Esta representación es muy compacta, con $R \sum_{n=1}^{N} I_n$ parámetros, pero presenta dificultades prácticas; determinar el rango CP es un problema NP-difícil y los métodos de ajuste habituales no garantizan alcanzar el óptimo global \citebox{kolda2009tensor, wang2023tensor}. En notación diagramática, CP se representa mediante factores vectoriales conectados a un nodo central diagonal.
+
+La descomposición de Tucker es más flexible. En lugar de una única suma de componentes de rango 1, introduce un tensor núcleo $\boldsymbol{\mathcal{G}}$ que modela las interacciones entre los factores:
+
+\begin{equation} \label{eq: Tucker}
+    \tensor{\mathcal{X}}{_{i_1}_{i_2}_{...}_{i_N}} \approx 
+    \sum_{r_1=1}^{R_1} \cdots \sum_{r_N=1}^{R_N}
+    \tensor{\mathcal{G}}{_{r_1}_{r_2}_{...}_{r_N}}
+    \tensor{A}{^{(1)}_{i_1 r_1}}
+    \tensor{A}{^{(2)}_{i_2 r_2}}
+    \cdots
+    \tensor{A}{^{(N)}_{i_N r_N}} .
+\end{equation}
+
+Los valores $R_1,\ldots,R_N$ son los rangos de Tucker y pueden ser distintos para cada modo. Si las matrices de factores son ortogonales, se obtiene la Higher-Order Singular Value Decomposition (HOSVD), una extensión natural de la SVD al caso tensorial \citebox{wang2023tensor}. CP puede verse como un caso particular de Tucker cuando el núcleo es superdiagonal y todos los rangos coinciden. Sin embargo, el núcleo de Tucker contiene $\prod_{n=1}^{N} R_n$ parámetros, por lo que el coste vuelve a crecer exponencialmente con el orden del tensor.
+
+Esta limitación motiva formatos más escalables como Tensor Train (TT), conocido en física como Matrix Product State (MPS) \citebox{oseledets2011tt, schollwock2011dmrg}. TT representa un tensor de orden $N$ como una cadena de tensores locales $\boldsymbol{\mathcal{G}}^{(n)} \in \mathbb{R}^{R_{n-1} \times I_n \times R_n}$ conectados mediante índices virtuales. Su número de parámetros es
+
+\[
+    \sum_{n=1}^{N} R_{n-1} I_n R_n ,
+\]
+
+que crece linealmente con $N$ si los rangos se mantienen acotados. Además, la descomposición TT puede construirse mediante SVD sucesivas, lo que proporciona estabilidad numérica y permite controlar el error mediante el truncamiento de valores singulares \citebox{wang2023tensor, oseledets2011tt}. Desde la perspectiva cuántica, los rangos TT coinciden con los rangos de Schmidt de las biparticiones correspondientes, conectando esta construcción con la noción de entrelazamiento discutida anteriormente \citebox{schollwock2011dmrg}.
+
+La \tabref{tab:comparativa_descomposiciones} resume las diferencias principales entre los formatos anteriores.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+
+\begin{tabularx}{\textwidth}{|l|c|X|}
+\hline
+\textbf{Formato} & \textbf{Parámetros} & \textbf{Observaciones} \\
+\hline
+CP &
+$R \sum_n I_n$ &
+Muy compacta, pero el rango CP es difícil de determinar. \\
+\hline
+Tucker &
+$\prod_n R_n + \sum_n I_n R_n$ &
+Flexible, pero el núcleo crece exponencialmente con el orden. \\
+\hline
+TT/MPS &
+$\sum_n R_{n-1} I_n R_n$ &
+Escalado lineal para rangos fijos; construible mediante SVD sucesivas. \\
+\hline
+\end{tabularx}
+
+\caption{Comparación entre las descomposiciones CP, Tucker y TT/MPS.}
+\label{tab:comparativa_descomposiciones}
+\end{table}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{figures/Decompositions_in_TN.png}
+    \caption{Diagramas TN de algunas descomposiciones TN populares. (a) El formato CP descompone un tensor \(X\) en una suma de varios tensores de rango 1 $a^{(1)}_{:,r} \circ a^{(2)}_{:,r} \circ \cdots \circ a^{(N)}_{:,r}.$ (b) La descomposición de Tucker descompone un tensor \(X\) en un tensor núcleo \(G\) multiplicado por una matriz \(A^{(n)}\) a lo largo del modo \(n\)-ésimo. (c) La descomposición en términos de bloque descompone un tensor \(X\) en una suma de varias descomposiciones de Tucker, con rangos de Tucker bajos. (d) La descomposición TT descompone un tensor \(X\) en una multiplicación lineal de un conjunto de tensores núcleo de tercer orden $G^{(2)} \cdots G^{(N-1)}$ y dos matrices \(G^{(1)}\) y \(G^{(N)}\). (e) La descomposición TR descompone un tensor \(X\) en un conjunto de tensores núcleo de tercer orden y los contrae en una estructura de anillo. (f) La descomposición HT representa un tensor \(X\) como un diagrama con estructura de árbol. (g) La descomposición en malla tensorial, también conocida como PEPS, representa un tensor de alta dimensión como una malla bidimensional de tensores interconectados de menor rango, donde cada nodo se conecta con sus vecinos para capturar eficientemente correlaciones espaciales en sistemas con interacciones locales. \citebox{wang2023tensor}}
+    \label{fig: cp_decomposition}
+\end{figure}
+
+\section{Topologías principales de Tensor Networks}
+
+La topología de una Tensor Network determina qué correlaciones puede representar de forma eficiente y con qué coste computacional. En esta sección se detallan las topologías de TN más utilizadas y más relevantes en la literatura.
+
+\subsection{Matrix Product State / Tensor Train}
+
+El \textit{Matrix Product State} (MPS), o Tensor Train (TT), es la topología de TN más estudiada y la que mejor se entiende. Su estructura consiste en una cadena lineal de $N$ tensores de orden 3 conectados secuencialmente a través de índices virtuales de dimensión $D$ (dimension de enlace).
+
+El MPS es la representación más natural de los estados fundamentales de los sistemas cuánticos unidimensionales con interacciones locales, lo que lo hace bastante famoso en el campo de la física.
+
+Las correlaciones que un MPS puede representar decaen exponencialmente con la distancia entre sitios: la función de correlación entre los sitios $i$ y $j$ satisface $\langle O_i O_j \rangle - \langle O_i \rangle \langle O_j \rangle \sim e^{-|i-j|/\xi}$, donde $\xi$ es una longitud de correlación que depende de la dimensión de enlace $D$ \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Esto significa que el MPS es especialmente eficiente para capturar correlaciones locales o de corto alcance, pero puede requerir dimensiones de enlace elevadas para representar correlaciones de largo alcance.
+
+El MPS es muy relevante porque combina una interpretación física sólida, algoritmos de contracción manejables e implementaciones maduras. En aprendizaje supervisado, Stoudenmire y Schwab lo utilizaron para parametrizar clasificadores de imágenes sobre MNIST, alcanzando error de test inferior al $1\%$ en ese conjunto \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Su limitación principal es que impone una geometría unidimensional, y una imagen 2D debe linealizarse antes de entrar en la red.
+
+\subsection{Tree Tensor Network}
+
+Una \textit{Tree Tensor Network} (TTN) adopta una estructura jerárquica. Esta estructura, en lugar de propagar la información a lo largo de una cadena, asocia los tensores de la capa más baja (lo que en la literatura se denomina las \textit{hojas} o \textit{leaves} en ingles) a los índices del tensor original. Posteriormente se van contrayendo por pares hacia tensores de capas superiores, reduciendo progresivamente el número de índices hasta llegar a un único tensor raíz, que produce la salida. La distancia entre dos hojas del árbol suele crecer como $\mathcal{O}(\log N)$, lo que puede facilitar la combinación de información lejana respecto a una MPS lineal \citebox{wang2023tensor, evenbly2011tensor}.
+
+Esta propiedad, hace a la TTN especialmente atractiva para este trabajo, porque esta estructura es mucho más eficiente que el MPS para capturar correlaciones de largo alcance. En física, el TTN se utiliza para representar estados con una estructura de entrelazamiento jerárquica, como la que aparece en ciertos sistemas con simetría de escala. En \textit{machine learning}, la estructura de árbol resulta natural para datos con organización jerárquica intrínseca \citebox{wang2023tensor}.
+ 
+Sin embargo, el TTN tiene una limitación. Al ser una estructura de árbol sin ciclos, la información entre dos ramas distintas solo puede propagarse a través del nodo ancestro común. Esto limita la capacidad de la red para capturar correlaciones entre nodos que se encuentran en ramas separadas del árbol. Esta restricción motivó el desarrollo de arquitecturas más sofisticadas como la MERA.
+
+\subsection{MERA}
+
+La \textit{Multi-scale Entanglement Renormalization Ansatz} (MERA) fue introducida por Vidal en 2007 como una Tensor Network capaz de representar eficientemente los estados fundamentales de sistemas cuánticos críticos, es decir, sistemas en los que las correlaciones decaen como una ley de potencias en lugar de exponencialmente \citebox{vidal2007mera}.
+ 
+La innovación clave de la MERA respecto al TTN es la inclusión de tensores adicionales denominados \textit{disentanglers} (desentrelazadores). En cada capa de la estructura jerárquica, antes de aplicar los tensores de renormalización, que reducen el número de grados de libertad, se aplican disentanglers que actúan sobre pares de sitios vecinos para eliminar el entrelazamiento de corto alcance. Los tensores de renormalización se encargan de capturar las correlaciones a escalas mayores. La alternancia de capas de disentanglers y capas de renormalización permite a la MERA representar correlaciones a todas las escalas de longitud simultáneamente \citebox{wang2023tensor}.
+ 
+La topología MERA destaca por su capacidad para describir de forma eficiente sistemas con correlaciones a múltiples escalas, como ocurre típicamente en sistemas cuánticos complejos. En estos casos, una representación basada en MPS puede requerir una dimensión de enlace que crece de forma polinómica con el tamaño del sistema, mientras que la estructura jerárquica de la MERA permite capturar estas correlaciones de manera más natural \citebox{vidal2007mera}. Esta organización por capas está estrechamente relacionada con el concepto de grupo de renormalización, en el que cada nivel de la red puede interpretarse como una descripción efectiva del sistema a una escala de longitud diferente.
+ 
+En \textit{machine learning}, la topología MERA resulta prometedora para el procesamiento de datos con dependencias a múltiples escalas, como puede ser el caso de las imágenes \citebox{wang2023tensor}. Sin embargo, su mayor complejidad estructural (más parámetros y contracciones más costosas que el MPS o el TTN) hace que su uso práctico sea más limitado hasta la fecha.
+ 
+\subsection{PEPS}
+
+Los \textit{Projected Entangled Pair States} (PEPS) son la generalización más natural del MPS a dos dimensiones. Mientras que en la topología MPS cada tensor se conecta a lo sumo con dos vecinos, en PEPS cada tensor se conecta con cuatro vecinos, formando una red bidimensional que refleja directamente la geometría de una rejilla cuadrada \citebox{verstraete2004peps}.
+
+Para un sistema bidimensional de $M \times N$ sitios, cada tensor local en PEPS tiene un índice físico de dimensión $d$ y cuatro índices virtuales (arriba, abajo, izquierda, derecha) de dimensión $D$. Esto permite capturar de forma natural las correlaciones espaciales bidimensionales que caracterizan, por ejemplo, los estados fundamentales de sistemas cuánticos definidos sobre rejillas planas \citebox{wang2023tensor}.
+ 
+Sin embargo, esta ventaja geométrica tiene un coste. La contracción exacta de una red PEPS es un problema computacionalmente intratable; a diferencia del MPS, donde la contracción exacta tiene un coste polinomial. En la práctica, esto obliga a utilizar métodos de contracción aproximada, lo que introduce errores adicionales y limita el tamaño de las dimensiones de enlace que pueden utilizarse \citebox{wang2023tensor}. Existen aplicaciones de PEPS a clasificación supervisada en conjuntos como MNIST y Fashion-MNIST \citebox{cheng2021supervisedlearningpeps}.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.3}
+\begin{tabularx}{\textwidth}{|l|c|X|X|}
+\hline
+\textbf{Topología} & \textbf{Parámetros típicos} & \textbf{Ventaja principal} & \textbf{Limitación práctica} \\
+\hline
+MPS / TT & $\mathcal{O}(NdD^2)$ & Contracción eficiente y literatura consolidada. & Geometría 1D para datos que pueden ser 2D. \\
+\hline
+TTN & $\mathcal{O}(ND^3)$ & Agregación jerárquica y distancia logarítmica. & Interacciones limitadas entre ramas separadas. \\
+\hline
+PEPS & $\mathcal{O}(NdD^4)$ & Geometría 2D natural. & Contracción exacta intratable en general. \\
+\hline
+MERA & $\mathcal{O}(ND^4)$ & Correlaciones multiescala. & Mayor complejidad estructural y computacional. \\
+\hline
+\end{tabularx}
+\caption{Comparativa sintética de topologías relevantes de Tensor Networks.}
+\label{tab: comparativa_topologias}
+\end{table}

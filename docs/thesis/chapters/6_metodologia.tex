@@ -1,0 +1,219 @@
+\chapter{METODOLOGÍA}
+
+En los capítulos anteriores se han introducido los conceptos necesarios para entender los conceptos matemáticos que subyacen el \textit{machine learning}, el \textit{deep learning} y las TN. Sin embargo, para explicar el desarrollo completo de este TFG hace falta cambiar el enfoque. En esta sección se explicará cómo se construye un experimento completo de clasificación de imágenes, qué problemas aparecieron al llevar esa teoría al código y por qué la arquitectura final termina teniendo la forma que tiene.
+
+Este cambio de punto de vista es necesario porque una parte considerable del trabajo no consistió únicamente en proponer una arquitectura, sino en hacer que todo el sistema funcionara de extremo a extremo. En un problema de clasificación de imágenes intervienen varias piezas que tienen que encajar entre sí; la preparación del dataset, el preprocesamiento de las imágenes, la carga de datos por \textit{batches}, la construcción del modelo, el entrenamiento, la evaluación y el registro de resultados. En este proyecto todas esas piezas se implementaron en Python, usando PyTorch como librería principal para construir modelos diferenciables y entrenarlos mediante \textit{backpropagation}.
+
+Por tanto, este capítulo tiene dos objetivos. El primero es explicar la estructura computacional del experimento; cómo se cargan los datos, cómo se transforman las imágenes, cómo se define el modelo y cómo se entrena. El segundo es reconstruir la evolución del proyecto; por qué se empezó con una idea más simple, qué limitaciones se fueron encontrando y cómo esas limitaciones llevaron a la versión final basada en un front-end AIM y una TTN híbrida propia. Esta segunda parte es especialmente importante, porque la arquitectura final no apareció de golpe, sino como resultado de una serie de decisiones tomadas a partir de pruebas, errores y diagnósticos experimentales.
+
+\section{Pipeline computacional de clasificación en PyTorch}
+
+Antes de entrar en los detalles concretos del modelo tensorial, conviene describir la estructura general del pipeline de clasificación. En PyTorch, un experimento de clasificación de imágenes suele organizarse alrededor de una cadena bastante estable; un dataset define cómo se accede a cada muestra, un conjunto de transformaciones prepara la imagen, un \textit{DataLoader} agrupa las muestras en \textit{batches}, un modelo genera predicciones, una función de pérdida compara esas predicciones con la etiqueta correcta y un optimizador actualiza los parámetros. Esta estructura práctica complementa la visión general de entrenamiento, regularización y optimización de modelos profundos descrita en \citebox{Goodfellow-et-al-2016}.
+
+\begin{center}
+\texttt{dataset -> transforms -> DataLoader -> modelo -> loss -> backward -> optimizer}
+\end{center}
+
+En este proyecto, el dataset no se entiende simplemente como una carpeta con imágenes. Cada muestra debe proporcionar una imagen y una etiqueta asociada, de forma que el modelo pueda aprender a relacionar una entrada visual con una clase concreta. Además, en el caso del dataset principal del proyecto, algunas de las imágenes originales contienen varios objetos de laboratorio en una misma escena. Por este motivo, antes de entrenar el clasificador fue necesario convertir las anotaciones del dataset en muestras individuales mediante recortes o \textit{crops} de cada objeto.
+
+El preprocesamiento transforma cada imagen a un formato común; tamaño fijo, conversión a tensor, normalización y, cuando procede, aumento de datos. Después, el \textit{DataLoader} permite recorrer el dataset por \textit{batches}, mezclar los ejemplos de entrenamiento y separar correctamente los conjuntos de entrenamiento, validación y test.
+
+El modelo recibe un \textit{batch} de imágenes y devuelve una puntuación para cada clase. A esas puntuaciones se les llama \textit{logits}. En clasificación multiclase no se aplica una \textit{softmax} al final del modelo, porque la función \texttt{CrossEntropyLoss} de PyTorch ya combina internamente una normalización logarítmica con la comparación frente a la etiqueta correcta. Una vez calculada la pérdida, PyTorch obtiene los gradientes con \texttt{loss.backward()} y el optimizador actualiza los parámetros con \texttt{optimizer.step()}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0\linewidth]{figures/Pipeline_Scheme.png}
+    \caption[Pipeline completo del modelo propuesto]{Esquema general del pipeline desarrollado en el TFG para la clasificación de imágenes del dataset ChemEq25. A partir de las imágenes originales y sus anotaciones se generan recortes individuales de objetos, que posteriormente se transforman, normalizan y agrupan en \textit{batches}. Cada imagen procesada se introduce en un \texttt{AIMPatchEmbedding}, que conserva parte de la estructura espacial mediante un \textit{stem} convolucional y bloques AIM2D antes de convertirla en una secuencia de \textit{patches} de dimensión $[B,196,12]$. Esta secuencia alimenta la arquitectura \texttt{HybridCustomTTN}, formada por bloques MPS de tres sitios organizados jerárquicamente con dimensión de enlace \texttt{bond\_dim = 12}. La salida de la TN pasa por una cabeza lineal que produce los \textit{logits} de clasificación para las 25 clases. La parte inferior del diagrama representa el proceso de entrenamiento; comparación con las etiquetas reales mediante entropía cruzada regularizada con término $L_2$, actualización con AdamW y planificación del aprendizaje mediante \textit{warmup} coseno y \texttt{ReduceLROnPlateau}. Las flechas rojas indican la \textit{backpropagation} de los gradientes a través de los módulos entrenables.}
+    \label{fig;Pipeline_Scheme}
+\end{figure}
+
+\section{Organización del proyecto}
+
+Una vez fijado el pipeline general, el código se organizó separando las distintas responsabilidades del experimento. Esta organización fue necesaria para poder cambiar una parte del sistema sin tener que reescribir todas las demás. Por ejemplo, se podría cambiar el \textit{embedding} sin modificar el bucle de entrenamiento, o sustituir una MPS por una TTN manteniendo la misma interfaz de entrada y salida.
+
+\begin{verbatim}
+src/tn_dl/
+  cli/           puntos de entrada para entrenar, evaluar o auditar
+  config/        lectura y validación de parámetros desde YAML
+  data/          datasets, splits, crops, transforms y DataLoaders
+  embeddings/    transformaciones de imagen a secuencia tensorial
+  layers/        capas MPS, TTN, HybridCustomTTN y AIM
+  models/        composición embedding + clasificador tensorial
+  training/      bucle de entrenamiento, loss, optimizador y scheduler
+  evaluation/    diagnósticos, matrices de confusión y auditorías
+  utils/         utilidades generales del proyecto
+configs/         ficheros YAML de experimentos
+runs/            métricas, curvas, checkpoints y diagnósticos
+scripts/         scripts auxiliares, incluyendo lanzamientos en servidor
+\end{verbatim}
+
+La carpeta \texttt{data} contiene la lógica específica de cada dataset. Dentro de esta carpeta se encuentra \texttt{lab\_apparatus.py}, que es el código que implementa la lectura de las imágenes, las anotaciones, los recortes de objetos y las transformaciones necesarias para obtener tensores de entrada. La carpeta \texttt{embeddings} contiene las clases que convierten una imagen en una secuencia compatible con la red tensorial. La carpeta \texttt{layers} contiene las capas tensoriales propiamente dichas, incluyendo la MPS de referencia, la TTN propia, la versión híbrida y los bloques AIM. Finalmente, \texttt{training} y \texttt{evaluation} contienen la parte de entrenamiento, métricas y diagnósticos.
+
+Los parámetros de cada experimento se almacenan en archivos YAML dentro de \texttt{configs}. Esto permite lanzar entrenamientos distintos cambiando únicamente la configuración; número de épocas, \textit{learning rate}, dimensión de enlace, tipo de \textit{embedding}, tamaño de batch, regularización, \textit{scheduler}, etc. Esta separación fue especialmente útil en la fase experimental, debido a que te permite manipular y comparar parámetros de distintas configuraciones de entrenamiento de manera sencilla y práctica.
+
+\section{Dataset utilizado}
+
+Aunque durante las primeras fases se utilizó el dataset de Oxford Flowers 102 \citebox{Nilsback08}, el dataset principal del proyecto es ChemEq25, también referido en el código como \textit{Chemistry Lab Apparatus} \citebox{hossain2025chemistrylabdataset}. Flowers102 fue útil para comprobar que el pipeline funcionaba con un dataset conocido, descargar datos, generar curvas y verificar que la arquitectura era entrenable. Sin embargo, el objetivo final del TFG es trabajar con imágenes de material de laboratorio, por lo que la metodología experimental terminó centrada en ChemEq25.
+
+ChemEq25 no se usó directamente como una clasificación de imágenes completas. En las imágenes originales pueden aparecer varios objetos, y cada objeto puede pertenecer a una clase distinta. Por tanto, se reformuló el problema como clasificación por instancia; cada anotación del dataset se transforma en un recorte de imagen que contiene un objeto y una etiqueta de clase. Así, el modelo no recibe una escena completa con varios elementos, sino un crop asociado a una única clase.
+
+El dataset contiene 25 clases de material de laboratorio. Tras convertir las anotaciones en recortes individuales, se validaron los siguientes tamaños de split;
+
+\begin{center}
+\begin{tabular}{c|c}
+\textbf{Split} & \textbf{Número de crops} \\
+\hline
+Train & 4863 \\
+Validación & 1393 \\
+Test & 704 \\
+\end{tabular}
+\end{center}
+
+Un detalle importante fue que las anotaciones no siempre tenían exactamente el mismo formato. Algunas seguían el formato YOLO habitual de caja delimitadora, mientras que otras contenían más puntos, correspondientes a polígonos de segmentación. Para tratar ambos casos de forma uniforme, cuando una anotación tenía cinco campos se interpretaba como una caja YOLO estándar, y cuando tenía más campos se calculaba la caja delimitadora envolvente del polígono. De esta manera, todas las anotaciones podían convertirse en crops rectangulares.
+
+También se añadieron transformaciones específicas para evitar deformar excesivamente algunos objetos. Al principio, todos los crops se redimensionaban directamente a $224\times224$, pero esto podía alterar la relación de aspecto de objetos alargados como pipetas, tubos de ensayo o varillas de vidrio. Por ello se implementó una opción de preprocesamiento que preserva la relación de aspecto y rellena la imagen hasta obtener un cuadrado. El color de relleno se escogió cercano a la media de \textit{ImageNet} para que, tras la normalización, no introdujera bordes artificiales demasiado dominantes.
+
+% \TemplateText{\textbf{Figura sugerida.} Aquí sería muy útil incluir una figura con una imagen original de ChemEq25, las cajas sobre los objetos y varios crops resultantes. Esta figura ayudaría a entender que el dataset no se usó como una simple carpeta de imágenes, sino que hubo una adaptación previa del problema.}
+
+\section{El papel del embedding}
+
+Una red tensorial no recibe una imagen en formato $[C,H,W]$ de forma directa. Antes es necesario convertir la imagen en una secuencia de vectores locales. En este proyecto esa conversión se denomina \textit{embedding}. De forma general, el embedding transforma una imagen en un tensor de la forma
+
+\begin{center}
+\texttt{[batch, sequence\_length, local\_dim]}.
+\end{center}
+
+Aquí \texttt{sequence\_length} representa el número de posiciones de entrada que recibe la red tensorial, y \texttt{local\_dim} es la dimensión del vector asociado a cada sitio. Esta separación es importante porque la red tensorial no trabaja con la geometría original de la imagen, sino con una secuencia.
+
+La primera opción natural era usar una representación muy directa de los píxeles, parecida a la que se emplea en algunos trabajos con MPS sobre datasets sencillos. Sin embargo, esto escala muy mal cuando las imágenes son grandes y en color. Una imagen RGB de $224\times224$ tendría $224\cdot224\cdot3 = 150528$ valores si se tratara cada canal de cada píxel como un sitio separado. Aunque esta idea puede ser útil para entender el planteamiento, no era razonable como ruta principal para este proyecto.
+
+Por este motivo se introdujo \texttt{PatchEmbedding}. En lugar de tratar cada píxel como un sitio, la imagen se divide en parches. Para imágenes de $224\times224$ y \texttt{patch\_size=16}, se obtiene una rejilla de $14\times14$, es decir, 196 posiciones de entrada. Cada patch contiene información local de la imagen y se proyecta mediante una capa lineal a una dimensión \texttt{local\_dim}. Así se pasa de una imagen a una secuencia compatible con la TTN;
+
+\begin{center}
+\texttt{[B, 3, 224, 224] $\rightarrow$ [B, 196, local\_dim]}.
+\end{center}
+
+Para reducir la pérdida de proximidad espacial al convertir la imagen 2D en una secuencia 1D, se implementó también una ordenación en zigzag. En vez de recorrer todas las filas siempre en el mismo sentido, las filas alternas se recorren en sentido inverso. Esto no conserva toda la geometría 2D, pero evita algunas discontinuidades fuertes entre el final de una fila y el principio de la siguiente.
+
+\section{Construcción del modelo de TN}
+
+Originalmente se consideró utilizar una topología MPS para construir el modelo tensorial. Esta elección era natural, ya que las MPS son una de las arquitecturas de redes tensoriales más estudiadas en tareas de clasificación de imágenes. Sin embargo, gran parte de estos trabajos se han desarrollado sobre datasets relativamente simples, como MNIST o Fashion-MNIST, formados por imágenes en escala de grises y de baja resolución. En MNIST, por ejemplo, cada imagen tiene tamaño $28\times 28$, por lo que una representación pixel a pixel requiere una secuencia de $784$ posiciones de entrada. Aunque este número ya es considerable, sigue siendo manejable y permite realizar las contracciones en un ordenador convencional.
+
+El problema aparece al intentar trasladar esta idea directamente al dataset objetivo de este trabajo. En nuestro caso, las imágenes originales son RGB y tienen una resolución de $640\times640$ píxeles. Si se construyera una MPS asignando un sitio a cada canal de cada píxel, la longitud de la secuencia sería
+
+\[
+640\cdot640\cdot3 = 1\,228\,800.
+\]
+
+Esto implicaría construir una red con más de un millón de nodos o de posiciones de entrada, lo que hacía inviable utilizar una MPS pixel a pixel como arquitectura principal. Además, en una MPS lineal la información debe propagarse a lo largo de toda la cadena. Para imágenes grandes o secuencias con muchas entradas, esto puede hacer que el modelo sea difícil de entrenar o que requiera una dimensión de enlace demasiado grande.
+
+Por tanto, aunque la MPS fue el punto de partida conceptual por ser la opción más conocida y estudiada, se descartó pronto como solución directa para este problema. Esta limitación motivó el desarrollo de una arquitectura propia de tipo TTN, llamada en el código \texttt{CustomTTN}. La idea fue construir una red jerárquica en la que las posiciones de entrada o nodos se agrupan de tres en tres. Cada grupo se contrae mediante un bloque MPS pequeño de tres nodos, y el resultado se usa como entrada del siguiente nivel. El proceso se repite hasta obtener un único vector raíz.
+
+
+\begin{center}
+\texttt{posiciones de entrada $\rightarrow$ bloques MPS-3 $\rightarrow$ nivel intermedio $\rightarrow$ ... $\rightarrow$ vector raíz}
+\end{center}
+
+Cada bloque MPS-3 está formado por tres nodos; izquierdo, central y derecho. El índice libre de salida se situó en el nodo central, de forma que el bloque pudiera contraerse internamente y devolver un vector de dimensión \texttt{bond\_dim}. Esta elección mantiene una cierta simetría entre los extremos del bloque y permite interpretar la salida como la información que asciende hacia el siguiente nivel de la TTN.
+
+% \TemplateText{\textbf{Figura sugerida.} Insertar aquí un esquema de la CustomTTN; entradas agrupadas de tres en tres, bloques MPS-3, niveles intermedios y vector raíz final. La figura debe ser conceptual, no una captura de código.}
+
+El uso de una TTN reduce la profundidad efectiva de propagación de la información. En una cadena MPS, un sitio puede estar muy lejos de otro en términos de contracciones. En una TTN de aridad 3, el número de niveles crece aproximadamente como $\lceil \log_3(L) \rceil$, donde $L$ es el número de nodos. Por ejemplo, con $L=196$ posiciones de entrada procedentes de un \texttt{PatchEmbedding}, la red necesita pocos niveles jerárquicos en comparación con una cadena lineal. Esta fue una de las razones principales para explorar una topología de árbol.
+
+Un problema práctico aparece cuando el número de posciones de entrada no es múltiplo de 3. En ese caso, el último bloque de un nivel no tendría tres entradas reales. Para mantener la misma estructura en todos los bloques se añadió un \textit{padding} estructural; nodos constantes no entrenables con tensor $[1,0,\dots,0]$. Estos nodos no introducen parámetros nuevos, pero permiten completar los grupos de tres entradas y conservar la arquitectura uniforme.
+
+La TTN propia se implementó usando TensorKrowch, una librería que permite construir redes tensoriales sobre PyTorch. Esta decisión tenía sentido porque TensorKrowch facilita la creación de nodos, enlaces y contracciones sin tener que escribir manualmente todas las operaciones con \texttt{einsum}. Aun así, durante la implementación aparecieron varias dificultades importantes.
+
+La primera fue distinguir entre los nodos estructurales de la red y los nodos de datos que TensorKrowch crea al introducir un batch. En la construcción de la red se definen los nodos entrenables, sus ejes y sus conexiones. Después, en el forward, TensorKrowch conecta los datos reales a los ejes de entrada. Esta distinción no es solo formal; si los nodos entrenables no se crean correctamente como \texttt{ParamNode}, no aparecen como parámetros del modelo y no reciben gradientes.
+
+Otra dificultad importante apareció al contraer niveles sucesivos. Al usar el operador \texttt{@}, TensorKrowch crea nodos resultantes de una contracción. Sin embargo, los vecinos de ciertos ejes pueden seguir apuntando a los nodos estructurales originales, no necesariamente al nodo resultante que conceptualmente se quiere usar en el siguiente nivel. Por este motivo, en la primera versión de la \texttt{CustomTTN} fue necesario seguir explícitamente los nodos compuestos producidos en cada nivel y pasarlos como entradas del nivel siguiente.
+
+Esta parte fue metodológicamente importante porque mostró que implementar una red tensorial no consiste únicamente en que las dimensiones cuadren. También hay que entender cómo la librería representa internamente los nodos, los enlaces y las contracciones. De hecho, varias validaciones sintéticas con longitudes pequeñas, como $L=9$, $L=27$ y $L=196$, fueron necesarias para comprobar que el forward, el backward y los gradientes funcionaban correctamente.
+
+Una vez que la \textit{CustomTTN} funcionaba técnicamente, el siguiente problema fue experimental. Las primeras curvas mostraban que el modelo podía ejecutarse y recibir gradientes, pero su capacidad de aprendizaje y generalización era limitada. Esto llevó a plantear una modificación; introducir transformaciones no lineales entre niveles de la TTN.
+
+La idea era razonable desde el punto de vista del \textit{deep learning}. Si entre niveles solo hay contracciones multilineales, el modelo puede quedar limitado en expresividad o ser difícil de optimizar. Por tanto, se propuso aplicar transformaciones de PyTorch sobre los vectores intermedios, manteniendo siempre la dimensión de enlace;
+
+\begin{center}
+\texttt{[B, n\_blocks, bond\_dim] $\rightarrow$ LayerNorm $\rightarrow$ Linear $\rightarrow$ ReLU $\rightarrow$ [B, n\_blocks, bond\_dim]}.
+\end{center}
+
+El problema fue que TensorKrowch no permite reasignar directamente el tensor de un nodo resultante de una contracción. Intentar modificar \texttt{node.tensor} después de contraer nodos llevaba a errores, porque esos nodos resultantes no se comportan como tensores ordinarios de PyTorch. Se consideraron varias alternativas; tocar partes internas de TensorKrowch, reescribir toda la arquitectura con \texttt{torch.einsum}, o usar directamente una TTN oficial de la librería. Sin embargo, esas opciones se descartaron porque uno de los objetivos del proyecto era crear una TN propia y porque utilizar \texttt{torch.einsum} no eral lo más eficiente computacionalmente.
+
+La solución fue dividir la red en niveles independientes. Cada nivel de la TTN se encarga de contraer un único nivel de bloques MPS-3 usando TensorKrowch y devuelve un tensor PyTorch ordinario. Entre un nivel y el siguiente se aplican transformaciones estándar de PyTorch. Así nació la \texttt{HybridCustomTTN};
+
+\begin{center}
+\texttt{TTNLevel $\rightarrow$ LayerNorm + Linear + ReLU $\rightarrow$ TTNLevel $\rightarrow$ ...}
+\end{center}
+
+El nombre \textit{Hybrid} refleja precisamente esta combinación; TensorKrowch se utiliza para las contracciones tensoriales, mientras que PyTorch se utiliza para las transformaciones intermedias y el entrenamiento general del modelo. Esta arquitectura conservó la idea original de una TTN propia, añadió más capacidad expresiva y consiguió una integración más limpia con el flujo de entrenamiento de PyTorch.
+
+% \TemplateText{\textbf{Figura sugerida.} Incluir aquí una figura comparativa; a la izquierda, una CustomTTN monolítica; a la derecha, la HybridCustomTTN dividida por niveles con bloques PyTorch intermedios. Esta puede ser una de las figuras más importantes del capítulo.}
+
+\section{Cambio de embedding}
+
+Aunque la \texttt{HybridCustomTTN} mejoró el comportamiento respecto a la versión anterior, seguía apareciendo un problema de fondo; la imagen se convertía demasiado pronto en una secuencia. El \texttt{PatchEmbedding} reducía la imagen a una lista de parches y, aunque el orden zigzag ayudaba parcialmente, la estructura 2D original quedaba muy debilitada. Esto es especialmente problemático en imágenes reales, donde la forma, orientación y relación espacial entre partes del objeto son determinantes.
+
+Para atacar este problema se incorporó \texttt{AIMPatchEmbedding}, inspirado en los bloques AIM del trabajo \textit{Deep Tree Tensor Networks for Image Recognition}. En lugar de aplanar la imagen casi al principio, primero se procesa como mapa bidimensional mediante un pequeño \textit{front-end} espacial y así mejorar la representación que recibe la TTN.
+
+\begin{center}
+\texttt{imagen $\rightarrow$ stem CNN $\rightarrow$ AIM2D $\rightarrow$ Conv2d 1x1 $\rightarrow$ flatten + zigzag $\rightarrow$ HybridCustomTTN}
+\end{center}
+
+El bloque AIM2D tiene dos ramas lineales que se combinan mediante producto elemento a elemento. Si ambas ramas son lineales en la entrada, su producto introduce interacciones bilineales. Esta idea encaja de forma natural con el lenguaje de redes tensoriales, porque introduce interacciones multiplicativas estructuradas antes de entregar la representación a la TTN.
+
+En términos de dimensiones, con imágenes de $224\times224$ y \texttt{patch\_size=16}, el \textit{front-end} reduce la imagen a una rejilla $14\times14$. Después, una convolución $1\times1$ proyecta los canales a \texttt{local\_dim}, y finalmente la rejilla se aplana;
+
+\begin{center}
+\texttt{[B, 3, 224, 224] $\rightarrow$ [B, local\_dim, 14, 14] $\rightarrow$ [B, 196, local\_dim]}.
+\end{center}
+
+Este cambio fue importante porque evitó comprimir cada patch directamente a muy pocos números sin haber procesado antes la información espacial. En la configuración final más relevante, se utilizó \texttt{local\_dim=12} y \texttt{bond\_dim=12}, de forma que la TTN recibía una representación más rica que en las primeras pruebas.
+
+\section{Entrenamiento, regularización y métricas de estudio}
+
+El entrenamiento se realizó como un problema de clasificación multiclase. El modelo produce \textit{logits} de dimensión igual al número de clases, y la etiqueta de cada crop es un entero entre 0 y 24. La función de pérdida principal fue \texttt{CrossEntropyLoss}. El optimizador utilizado fue AdamW, que permite introducir \textit{weight decay} como forma de regularización.
+
+Durante el desarrollo se observó que mirar solo la pérdida de entrenamiento no era suficiente. En algunas fases el modelo aprendía el conjunto de entrenamiento, pero no generalizaba bien al conjunto de validación. Por eso se registraron varias métricas complementarias;
+
+\begin{itemize}
+    \item \textbf{Train loss y eval loss}; permiten ver si el modelo está aprendiendo y si aparece separación entre entrenamiento y validación.
+    \item \textbf{Accuracy top-1}; mide si la clase más probable coincide con la etiqueta correcta.
+    \item \textbf{Accuracy top-5}; mide si la clase correcta aparece entre las cinco clases más probables. Es útil cuando hay clases visualmente parecidas.
+    \item \textbf{Macro F1}; resume el comportamiento medio por clase, dando peso similar a todas las clases.
+    \item \textbf{Confianza media en aciertos y errores}; ayuda a detectar si el modelo falla con demasiada seguridad.
+\end{itemize}
+
+Además, se añadieron diagnósticos por clase; matriz de confusión, métricas por clase, distribución de predicciones y lista de confusiones más frecuentes. Esto permitió identificar que los errores no eran aleatorios, sino que se concentraban en objetos visualmente parecidos o geométricamente delicados, como \textit{Measuring Cylinder}, \textit{Volumetric Flask}, \textit{Separating Funnel}, \textit{Test Tube}, \textit{Pipette} o las distintas variantes de \textit{Round Bottom Flask}.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{figures/confusion_matrix.png}
+    \caption{Matriz de confusion obtenida experimentalmente utilizando el modelo \textit{HybridCustomTTN}}
+    \label{fig;matrix_function_1}
+\end{figure}
+
+A partir de estos diagnósticos se fueron introduciendo mejoras en el entrenamiento. El \textit{learning rate} se redujo respecto a las primeras pruebas, porque valores demasiado altos producían trayectorias de optimización menos estables. Después se añadió un \textit{scheduler} \texttt{ReduceLROnPlateau}, que reduce el \textit{learning rate} cuando la pérdida de validación deja de mejorar. También se implementó \textit{warmup}, primero lineal y después coseno, para que el entrenamiento no empezara con pasos demasiado agresivos desde la primera época.
+
+Otra mejora fue la regularización explícita \textit{L2}, añadida a la función de pérdida además del \textit{weight decay}. Finalmente se incorporó \textit{label smoothing}, que suaviza ligeramente la confianza durante el entrenamiento. Su objetivo no era solo mejorar la precisión, sino reducir la sobreconfianza del modelo cuando se equivoca. En las pruebas finales, \texttt{label\_smoothing=0.05} produjo una mejora pequeña en \textit{accuracy}, pero una mejora más clara en calibración.
+
+\section{Evolución experimental del proyecto}
+
+La evolución del proyecto puede resumirse como una cadena de problemas y respuestas. Primero se ideó una MPS y un pipeline de entrenamiento funcional. Después se desarrolló una TTN propia para reducir las limitaciones de una cadena lineal y explorar una topología jerárquica. Más adelante, al ver que la TTN era difícil de enriquecer con no linealidades, se refactorizó en una \texttt{HybridCustomTTN} por niveles. Finalmente, al observar que la representación secuencial perdía demasiada información espacial, se incorporó \texttt{AIMPatchEmbedding}.
+
+Esta evolución también afectó al dataset. Flowers102 sirvió como banco de pruebas inicial, pero el trabajo experimental se trasladó a ChemEq25, que era el dataset más alineado con el objetivo del TFG. La adaptación a ChemEq25 obligó a implementar lectura de anotaciones, generación de crops, auditorías de datos y transformaciones específicas para preservar mejor la forma de los objetos.
+
+Los primeros entrenamientos serios sobre ChemEq25 con AIM y HybridCustomTTN ya alcanzaron resultados alrededor del 70--75\% de accuracy en validación. Posteriormente, al ajustar el \textit{learning rate}, añadir \textit{warmup}, preservar la relación de aspecto, usar regularización y aplicar \textit{label smoothing}, la mejor configuración observada alcanzó aproximadamente un 89\% de \textit{accuracy} y un macro F1 también cercano a 0.89. Estos resultados concretos se analizarán con más detalle en el capítulo de resultados y discusión; aquí lo importante es entender que cada mejora nació de un diagnóstico experimental previo.
+
+\section{Ejecución en servidores y registro experimental}
+
+Los entrenamientos más costosos se ejecutaron en los servidores Lorca de la universidad. Esto formó parte de la metodología real del proyecto, porque permitió lanzar entrenamientos largos, usar GPU, guardar checkpoints y recuperar métricas para analizarlas posteriormente. El trabajo en servidor también obligó a cuidar aspectos prácticos como el entorno de Python, las dependencias, los scripts de lanzamiento y los logs de ejecución.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=1.0 \linewidth]{figures/GPU_picture.png}
+    \caption{Captura de pantalla de una GPU ADA 4000 del servidor Lorca de la UEM ejecutando dos procesos de entrenamientos diferentes en paralelo.}
+    \label{fig;placeholder}
+\end{figure}
+
+Cada ejecución genera una carpeta dentro de \texttt{runs/}. En ella se guardan los archivos necesarios para reconstruir el experimento; configuración usada, métricas por época, curvas de pérdida, checkpoints, diagnósticos y, cuando procede, matrices de confusión. Esta trazabilidad fue esencial para comparar configuraciones de forma razonable. Sin este registro, habría sido muy difícil saber si una mejora se debía realmente a la arquitectura, al preprocesamiento, al \textit{learning rate}, a la seed o a otro cambio del entrenamiento.

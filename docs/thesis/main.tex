@@ -1,0 +1,320 @@
+\documentclass[11pt,a4paper]{report}
+% ============================================================================
+% PAQUETES
+% Referencias (documentacion oficial):
+% - CTAN (indice general): https://ctan.org/pkg
+% - hyperref manual: https://ctan.org/pkg/hyperref
+% - cleveref manual: https://ctan.org/pkg/cleveref
+% - amsmath guide: https://ctan.org/pkg/amsmath
+% - physics: https://ctan.org/pkg/physics
+% - braket: https://ctan.org/pkg/braket
+% - quantikz: https://ctan.org/pkg/quantikz
+% - qcircuit: https://ctan.org/pkg/qcircuit
+% ============================================================================
+
+% --- Codificacion y lengua ---
+%\usepackage[utf8]{inputenc}          % Entrada UTF-8.
+\usepackage[T1]{fontenc}             % Salida con acentos y caracteres especiales correctos en PDF.
+\usepackage[spanish,es-tabla]{babel} % Reglas tipograficas en espanol ("Tabla" en vez de "Table").
+\usepackage{lmodern} %Mejora fuentes + elimina warnings
+\usepackage{fix-cm} % permite cualquier tamaño de fuente
+\AtBeginDocument{\RenewCommandCopy\qty\SI} %\qty utiliza siunitx para evitar el error
+% --- Maquetacion base ---
+\usepackage{geometry} % Margenes y area util de la pagina.
+\usepackage{setspace} % Control del interlineado (\setstretch, \onehalfspacing...).
+\usepackage{titlesec} % Formato y espaciado de \chapter, \section, \subsection.
+\usepackage{fancyhdr} % Cabeceras y pie de pagina personalizados.
+\usepackage{tocloft}  % Personalizar fuentes y espaciado del TOC/LOF/LOT con \cftXXX.
+
+% --- Graficos, color y flotantes ---
+\usepackage{graphicx} % \includegraphics[width=...]{archivo} para insertar imagenes.
+\usepackage{xcolor}   % \textcolor{color}{texto}, \definecolor, \colorbox.
+\usepackage{caption}  % Controla el estilo de \caption y su aparicion en los indices.
+
+% --- Tablas y listas ---
+\usepackage{array}     % Tipos de columna personalizados en entornos tabular.
+\usepackage{tabularx}  % Tabla de ancho fijo con columna X que se expande: \begin{tabularx}{\textwidth}{lX}.
+\usepackage{booktabs}  % \toprule \midrule \bottomrule (reglas tipograficas de calidad).
+\usepackage{longtable} % Tablas que se extienden por varias paginas.
+\usepackage{enumitem}  % Control fino de itemize/enumerate: margenes, separacion, etiquetas.
+\usepackage{float}
+% --- Hipervinculos ---
+\usepackage{hyperref}  % Hipervinculos internos/externos. Cargar ANTES de cleveref.
+
+% --- Codigo fuente ---
+\usepackage{listings}
+% \begin{lstlisting}[language=Python, caption=..., label=cod:...]  ...  \end{lstlisting}
+% Inline: \lstinline|codigo|
+
+% --- Paquetes cientificos (fisica y computacion cuantica) ---
+\usepackage{amsmath,amssymb,mathtools,bm}
+% Entornos: equation, align, gather, pmatrix, cases.
+% Simbolos: \mathbb{R}, \boldsymbol{v}, \coloneqq, \therefore.
+
+\usepackage{cleveref}
+% \cref{fig:x} -> "figura 1"   \Cref{fig:x} -> "Figura 1"   \cref{fig:x,eq:y} -> "figura 1 y ecuacion 2"
+% Debe cargarse DESPUES de hyperref.
+
+\usepackage{physics}
+% \ket{\psi}  \bra{\phi}  \mel{\phi}{H}{\psi}  \comm{A}{B}  \anticomm{A}{B}
+% \abs{x}  \norm{v}  \pdv{f}{x}  \dv{f}{t}  \tr  \grad  \curl  \div  \laplacian
+
+%\usepackage{braket}
+% Delimitadores auto-escalados: \Ket{\frac{a}{b}}  \Bra{\frac{a}{b}}  \Braket{0|H|1}
+% Los comandos basicos \ket y \bra los provee physics (tienen precedencia).
+
+\usepackage{siunitx}
+% \SI{9.81}{\meter\per\second\squared}  ->  9.81 m s^{-2}
+% \num{1.38e-23}                        ->  1.38 x 10^{-23}   (numero solo)
+% \si{\kilo\gram}                       ->  kg                 (unidad sola)
+
+\usepackage{tensor} %Para tensores: \tensor{A}{^i_j}
+
+% Circuitos cuanticos: carga quantikz si esta instalado, si no usa qcircuit como fallback.
+% Instalar quantikz: tlmgr install quantikz
+\newif\ifhasquantikz
+\IfFileExists{quantikz.sty}{%
+  \hasquantikztrue
+  \usepackage{quantikz}%
+}{%
+  \hasquantikzfalse
+}
+\ifhasquantikz\else
+  \IfFileExists{qcircuit.sty}{\usepackage{qcircuit}}{}
+\fi
+
+% ============================================================================
+% AJUSTES GLOBALES DE MAQUETACION
+% ============================================================================
+\geometry{
+  a4paper,
+  left=3cm,
+  right=3cm,
+  top=4cm,
+  bottom=3.25cm,
+  headheight=38pt,
+  headsep=14pt,
+  footskip=1.25cm
+}
+
+\setstretch{1.1}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\setlist[itemize]{leftmargin=1.3cm,itemsep=2pt,topsep=2pt}
+
+% \TemplateText{} marca el texto de plantilla que debes reemplazar.
+% Actualmente negro (#000000); cambia a #C8102E para rojo institucional UE.
+\definecolor{UEred}{HTML}{000000}
+\newcommand{\TemplateText}[1]{\textcolor{UEred}{#1}}
+
+% ============================================================================
+% FORMATO DE TITULOS
+% ============================================================================
+\titleformat{\chapter}[hang]{\bfseries\fontsize{20pt}{24pt}\selectfont}{Cap\'itulo \thechapter.}{0.5em}{\MakeUppercase}
+\titlespacing*{\chapter}{0pt}{0pt}{24pt}
+
+\titleformat{\section}[hang]{\bfseries\fontsize{14pt}{18pt}\selectfont}{\thesection}{0.6em}{}
+\titlespacing*{\section}{0pt}{12pt}{8pt}
+
+\titleformat{\subsection}[hang]{\bfseries\fontsize{12pt}{15pt}\selectfont}{\thesubsection}{0.6em}{}
+\titlespacing*{\subsection}{0pt}{10pt}{6pt}
+
+% ============================================================================
+% HIPERVINCULOS Y REFERENCIAS
+% ============================================================================
+%---------------BIBLIOGRAFÍA-----------------------------------
+\usepackage[square,numbers]{natbib}
+%\citet{lecun2015deep} -> LeCun et al. (2015)
+%\citep{lecun2015deep} -> (LeCun et al., 2015)
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=black,
+  urlcolor=black,
+  citecolor=black
+}
+
+% Toda figura/tabla con \caption aparece automaticamente en su indice
+% (\listoffigures y \listoftables). Pon siempre \label DESPUES de \caption.
+\captionsetup[figure]{list=true}
+\captionsetup[table]{list=true}
+
+%--------------COLORES-------------------
+\definecolor{RefCiteGreen}{HTML}{1B8F3A}
+\definecolor{RefFigureBlue}{HTML}{1565C0}
+\definecolor{RefTableRed}{HTML}{C62828}
+\definecolor{RefCodePurple}{HTML}{7B1FA2}
+\definecolor{RefEqOrange}{HTML}{EF6C00}
+
+%----------MACRO BASE--------------------
+\newcommand{\refbox}[2]{%
+  \begingroup
+  \setlength{\fboxsep}{0.6pt}
+  \fcolorbox{#1}{white}{\mbox{#2}}%
+  \endgroup
+}
+%--------------CITAS---------------------
+\newcommand{\citebox}[1]{%
+  \refbox{RefCiteGreen}{\cite{#1}}%
+}
+%----------TABLAS, FIGURAS, CODIGO Y ECUACIONES------------
+\newcommand{\figref}[1]{%
+  \hyperref[#1]{\refbox{RefFigureBlue}{Figura~\ref*{#1}}}%
+}
+\newcommand{\tabref}[1]{%
+  \hyperref[#1]{\refbox{RefTableRed}{Tabla~\ref*{#1}}}%
+}
+\newcommand{\coderef}[1]{%
+  \hyperref[#1]{\refbox{RefCodePurple}{Código~\ref*{#1}}}%
+}
+\newcommand{\eqrefbox}[1]{%
+  \hyperref[#1]{\refbox{RefEqOrange}{Ecuación~\ref*{#1}}}%
+}
+% Imprime TOC sin titulo interno (evita duplicar "Indice general").
+\makeatletter
+\newcommand{\TableOfContentsNoTitle}{\@starttoc{toc}}
+\newcommand{\ListOfFiguresNoTitle}{\@starttoc{lof}}
+\newcommand{\ListOfTablesNoTitle}{\@starttoc{lot}}
+\makeatother
+
+%=======================================================================
+% CONFIGURACION DE CLEVEREF PARA CITAS
+%======================================================================
+
+%-------------------CITAS EN MAYUSCULAS--------------------------------
+%USO: \Crefbox{fig:red} -> Figura 1
+\newcommand{\Crefbox}[1]{%
+  \begingroup
+  \edef\type{\getrefbykeydefault{#1}{type}{}}%
+  \ifstrequal{\type}{figure}{%
+    \hyperref[#1]{\refbox{RefFigureBlue}{\Cref*{#1}}}%
+  }{%
+  \ifstrequal{\type}{table}{%
+    \hyperref[#1]{\refbox{RefTableRed}{\Cref*{#1}}}%
+  }{%
+  \ifstrequal{\type}{equation}{%
+    \hyperref[#1]{\refbox{RefEqOrange}{\Cref*{#1}}}%
+  }{%
+    \Cref{#1}%
+  }}}
+  \endgroup
+}
+
+%-----------------------CITAS EN MINUSCULAS------------------------------
+% USO: \crefbox{fig:red} -> figura 1
+\newcommand{\crefbox}[1]{%
+  \begingroup
+  \edef\type{\getrefbykeydefault{#1}{type}{}}%
+  \ifstrequal{\type}{figure}{%
+    \hyperref[#1]{\refbox{RefFigureBlue}{\cref*{#1}}}%
+  }{%
+  \ifstrequal{\type}{table}{%
+    \hyperref[#1]{\refbox{RefTableRed}{\cref*{#1}}}%
+  }{%
+  \ifstrequal{\type}{equation}{%
+    \hyperref[#1]{\refbox{RefEqOrange}{\cref*{#1}}}%
+  }{%
+    \cref{#1}%
+  }}}
+  \endgroup
+}
+% ============================================================================
+% CABECERA Y PIE
+% ============================================================================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\TemplateText{\small Aplicación de Tensor Networks en Modelos de IA\\Manuel Arenas Sánchez}}
+\fancyhead[R]{\includegraphics[width=3.57cm]{assets/logo_ue.png}}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancyfoot[C]{\thepage}
+
+% Redefine 'plain' para que las primeras paginas de cada \chapter
+% tambien muestren cabecera (por defecto report usa plain ahi).
+\fancypagestyle{plain}{%
+  \fancyhf{}%
+  \fancyhead[L]{\TemplateText{\small Aplicación de Tensor Networks en Modelos de IA\\Manuel Arenas Sánchez}}%
+  \fancyhead[R]{\includegraphics[width=3.57cm]{assets/logo_ue.png}}%
+  \renewcommand{\headrulewidth}{0.4pt}%
+  \fancyfoot[C]{\thepage}%
+}
+\begin{document}
+
+% ============================================================================
+% PORTADA
+% ============================================================================
+\thispagestyle{empty}
+\begin{center}
+  \vspace*{0.0cm}
+  \includegraphics[width=13.34cm]{assets/logo_ue.png}
+
+  \vspace{1.8cm}
+  {\bfseries\fontsize{20pt}{24pt}\selectfont UNIVERSIDAD EUROPEA DE MADRID\par}
+
+  \vspace{0.9cm}
+  {\bfseries\fontsize{16pt}{19pt}\selectfont ESCUELA DE ARQUITECTURA, INGENIER\'IA Y DISE\~NO\par}
+  \vspace{0.7cm}
+  {\bfseries\fontsize{16pt}{19pt}\selectfont \TemplateText{GRADO EN FÍSICA}\par}
+
+  \vspace{0.5cm}
+  {\fontsize{18pt}{22pt}\selectfont TRABAJO FIN DE GRADO\par}
+
+  \vspace{1.2cm}
+  {\bfseries\fontsize{20pt}{24pt}\selectfont \TemplateText{APLICACIÓN DE TENSOR NETWORKS EN MODELOS DE IA PARA CLASIFICACIÓN DE IMÁGENES}\par}
+
+  \vspace{0.9cm}
+  {\bfseries\fontsize{14pt}{17pt}\selectfont \TemplateText{MANUEL ARENAS SÁNCHEZ}\par}
+  {\bfseries\fontsize{14pt}{17pt}\selectfont \TemplateText{Dirigido por}\par}
+  {\bfseries\fontsize{14pt}{17pt}\selectfont \TemplateText{ALEJANDRO MATA ALI}\par}
+  {\bfseries\fontsize{14pt}{17pt}\selectfont \TemplateText{MARÍA FUENCISLA GILSANZ MUÑOZ}\par}
+
+  \vfill
+  {\bfseries\fontsize{14pt}{17pt}\selectfont CURSO \TemplateText{2025-2026}\par}
+\end{center}
+
+\clearpage
+\TemplateText{\textbf{T\'ITULO:} APLICACIÓN DE TENSOR NETWORKS EN MODELOS DE IA PARA CLASIFICACIÓN DE IMÁGENES}
+
+\vspace{0.8cm}
+\TemplateText{\textbf{AUTOR:} MANUEL ARENAS SÁNCHEZ}
+
+\vspace{0.8cm}
+\TemplateText{\textbf{TITULACI\'ON:} GRADO EN FÍSICA}
+
+\vspace{0.8cm}
+\TemplateText{\textbf{DIRECTOR/ES DEL PROYECTO:} ALEJANDRO MATA ALI}\\
+\hspace*{5.5cm}\TemplateText{MARÍA FUENCISLA GILSANZ MUÑOZ}
+
+\vspace{0.8cm}
+\TemplateText{\textbf{FECHA:} MARZO DE 2026}
+
+\clearpage
+
+\input{chapters/1_preliminares}
+
+\input{chapters/2_indices}
+
+% ============================================================================
+% CUERPO PRINCIPAL
+% ============================================================================
+\input{chapters/3_introduccion}
+
+\input{chapters/4_Objetivos}
+
+\input{chapters/5_Marco_Teorico}
+
+\input{chapters/6_metodologia}
+
+\input{chapters/8_Resultados}
+
+\input{chapters/9_discusion}
+
+\input{chapters/10_conclusiones}
+
+\input{chapters/12_referencias}
+
+\input{chapters/13_anexos}
+
+% ============================================================================
+% FIN
+% ============================================================================
+\end{document}
