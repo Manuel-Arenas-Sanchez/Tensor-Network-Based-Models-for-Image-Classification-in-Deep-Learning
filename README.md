@@ -28,16 +28,7 @@ Este repositorio contiene principalmente:
 
 ```text
 .
-├── Bibliografia/
-│   ├── TN meets NN.pdf
-│   ├── Supervised Learning With Quantum-Inspired Tensor Networks.pdf
-│   ├── Deep Tree Tensor Networks for Image Recognition.pdf
-│   └── ... otros articulos de apoyo
 ├── docs/
-│   ├── Contexto/
-│   │   ├── Contexto_TFG.md
-│   │   ├── Guia_bibliografia_estado_arte.md
-│   │   └── History.txt
 │   └── thesis/
 │       ├── assets/
 │       │   └── logo_ue.png
