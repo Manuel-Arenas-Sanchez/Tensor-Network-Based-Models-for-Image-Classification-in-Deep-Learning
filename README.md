@@ -83,8 +83,6 @@ Las referencias centrales para el estado del arte y el marco teorico son:
 - `Computational Complexity of Projected Entangled Pair States`.
 - `TensorKrowch: Smooth integration of tensor networks in machine learning`.
 
-La guia interna `docs/Contexto/Guia_bibliografia_estado_arte.md` resume para que sirve cada referencia y que precauciones hay que tener al citarla.
-
 ## Compilacion de la memoria
 
 La raiz LaTeX esta en `docs/thesis`.
