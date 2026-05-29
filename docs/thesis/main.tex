@@ -30,7 +30,7 @@
 \usepackage{graphicx} % \includegraphics[width=...]{archivo} para insertar imagenes.
 \usepackage{xcolor}   % \textcolor{color}{texto}, \definecolor, \colorbox.
 \usepackage{caption}  % Controla el estilo de \caption y su aparicion en los indices.
-
+\usepackage{subcaption} % Para poder poner captions en un entorno \figure conteniendo a mas de 1 imagen
 % --- Tablas y listas ---
 \usepackage{array}     % Tipos de columna personalizados en entornos tabular.
 \usepackage{tabularx}  % Tabla de ancho fijo con columna X que se expande: \begin{tabularx}{\textwidth}{lX}.
@@ -223,7 +223,7 @@
 % ============================================================================
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\TemplateText{\small Aplicación de Tensor Networks en Modelos de IA\\Manuel Arenas Sánchez}}
+\fancyhead[L]{\TemplateText{\small Aplicación de Tensor Networks en Deep Learning\\Manuel Arenas Sánchez}}
 \fancyhead[R]{\includegraphics[width=3.57cm]{assets/logo_ue.png}}
 \renewcommand{\headrulewidth}{0.4pt}
 \fancyfoot[C]{\thepage}
@@ -232,7 +232,7 @@
 % tambien muestren cabecera (por defecto report usa plain ahi).
 \fancypagestyle{plain}{%
   \fancyhf{}%
-  \fancyhead[L]{\TemplateText{\small Aplicación de Tensor Networks en Modelos de IA\\Manuel Arenas Sánchez}}%
+  \fancyhead[L]{\TemplateText{\small Aplicación de Tensor Networks en Deep Learning\\Manuel Arenas Sánchez}}%
   \fancyhead[R]{\includegraphics[width=3.57cm]{assets/logo_ue.png}}%
   \renewcommand{\headrulewidth}{0.4pt}%
   \fancyfoot[C]{\thepage}%
@@ -251,15 +251,15 @@
   {\bfseries\fontsize{20pt}{24pt}\selectfont UNIVERSIDAD EUROPEA DE MADRID\par}
 
   \vspace{0.9cm}
-  {\bfseries\fontsize{16pt}{19pt}\selectfont ESCUELA DE ARQUITECTURA, INGENIER\'IA Y DISE\~NO\par}
+  {\bfseries\fontsize{16pt}{19pt}\selectfont ESCUELA DE ARQUITECTURA, INGENIERÍA Y DISEÑO\par}
   \vspace{0.7cm}
   {\bfseries\fontsize{16pt}{19pt}\selectfont \TemplateText{GRADO EN FÍSICA}\par}
 
   \vspace{0.5cm}
   {\fontsize{18pt}{22pt}\selectfont TRABAJO FIN DE GRADO\par}
 
-  \vspace{1.2cm}
-  {\bfseries\fontsize{20pt}{24pt}\selectfont \TemplateText{APLICACIÓN DE TENSOR NETWORKS EN MODELOS DE IA PARA CLASIFICACIÓN DE IMÁGENES}\par}
+  \vspace{1.0cm}
+  {\bfseries\fontsize{20pt}{24pt}\selectfont \TemplateText{APLICACIÓN DE TENSOR NETWORKS COMO MODELOS DE DEEP LEARNING PARA CLASIFICACIÓN DE IMÁGENES}\par}
 
   \vspace{0.9cm}
   {\bfseries\fontsize{14pt}{17pt}\selectfont \TemplateText{MANUEL ARENAS SÁNCHEZ}\par}
@@ -272,13 +272,13 @@
 \end{center}
 
 \clearpage
-\TemplateText{\textbf{T\'ITULO:} APLICACIÓN DE TENSOR NETWORKS EN MODELOS DE IA PARA CLASIFICACIÓN DE IMÁGENES}
+\TemplateText{\textbf{TÍTULO:} APLICACIÓN DE TENSOR NETWORKS COMO MODELOS DE DEEP LEARNING PARA CLASIFICACIÓN DE IMÁGENES}
 
 \vspace{0.8cm}
 \TemplateText{\textbf{AUTOR:} MANUEL ARENAS SÁNCHEZ}
 
 \vspace{0.8cm}
-\TemplateText{\textbf{TITULACI\'ON:} GRADO EN FÍSICA}
+\TemplateText{\textbf{TITULACIÓN:} GRADO EN FÍSICA}
 
 \vspace{0.8cm}
 \TemplateText{\textbf{DIRECTOR/ES DEL PROYECTO:} ALEJANDRO MATA ALI}\\
@@ -304,15 +304,13 @@
 
 \input{chapters/6_metodologia}
 
-\input{chapters/8_Resultados}
+\input{chapters/7_Resultados}
 
-\input{chapters/9_discusion}
+\input{chapters/8_conclusiones}
 
-\input{chapters/10_conclusiones}
+\input{chapters/9_referencias}
 
-\input{chapters/12_referencias}
-
-\input{chapters/13_anexos}
+\input{chapters/10_anexos}
 
 % ============================================================================
 % FIN

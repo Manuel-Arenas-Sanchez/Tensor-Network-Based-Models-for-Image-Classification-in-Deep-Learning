@@ -1,27 +1,52 @@
 % ============================================================================
 % BLOQUES PRELIMINARES
 % ============================================================================
-\chapter*{RESUMEN}
+\chapter*{RESUMEN}\label{sec:Resumen}
 \addcontentsline{toc}{chapter}{RESUMEN}
-ESTO SE ESCRIBE AL FINAL DEL PROYECTO
 
-\chapter*{ABSTRACT}
+Este Trabajo de Fin de Grado estudia la aplicación de las \textit{Tensor Networks} como modelos de \textit{deep learning} para tareas de clasificación de imágenes. El objetivo principal es analizar si este tipo de arquitecturas, procedentes originalmente de la física cuántica y del álgebra multilineal, pueden integrarse de forma práctica en un flujo moderno de \textit{machine learning}. Para ello se revisan los fundamentos teóricos de las redes tensoriales, las principales topologías empleadas en la literatura y su relación con modelos entrenables mediante diferenciación automática.
+
+La parte práctica del proyecto consiste en el diseño e implementación de un \textit{pipeline} completo de clasificación en PyTorch, apoyado en TensorKrowch para las contracciones tensoriales. El sistema desarrollado incluye la preparación de datos, la generación de recortes a partir de anotaciones YOLO, el preprocesamiento de imágenes, la definición de modelos mediante archivos de configuración, el entrenamiento, la evaluación y el registro reproducible de experimentos. El trabajo utiliza el dataset ChemEq25, un conjunto extenso de imágenes de material de laboratorio.
+
+La arquitectura final combina un \texttt{AIMPatchEmbedding}, encargado de extraer una representación visual inicial, con una \texttt{HybridCustomTTN} basada en bloques tensoriales jerárquicos. A lo largo del proyecto se evaluaron distintas decisiones de diseño, como el tipo de \textit{embedding}, la dimensión interna del modelo, el \textit{learning rate}, la regularización, el \textit{label smoothing}, la preservación de la relación de aspecto y el aumento de datos. Los resultados muestran una mejora progresiva desde los primeros experimentos hasta el mejor modelo obtenido, que alcanzó un 96,05\% de \textit{accuracy}, un 95,94\% de F1 macro y un 99,43\% de \textit{top-5 accuracy} sobre ChemEq25.
+
+El trabajo concluye que las \textit{Tensor Networks} pueden utilizarse de forma viable en clasificación de imágenes cuando se integran dentro de un sistema de entrenamiento y preprocesamiento adecuado. No obstante, también se observa que el rendimiento no depende únicamente de la topología tensorial, sino de la representación de entrada, la regularización, el aumento de datos y la trazabilidad experimental. Por tanto, el proyecto aporta una implementación funcional y un análisis crítico de las ventajas y limitaciones de estos modelos en un problema de clasificación de imágenes.
+
+\chapter*{ABSTRACT}\label{sec:Abstract}
 \addcontentsline{toc}{chapter}{ABSTRACT}
 
-\TemplateText{Keywords: Palabras clave en inglés}
+This Bachelor's Thesis studies the application of \textit{Tensor Networks} as deep learning models for image classification tasks. The main objective is to analyse whether this type of architecture, originally developed in quantum physics and multilinear algebra, can be practically integrated into a modern machine learning workflow. To this end, the theoretical foundations of tensor networks, the main topologies used in the literature and their relation to trainable models based on automatic differentiation are reviewed.
 
-\chapter*{AGRADECIMIENTOS}
+The practical part of the project consists of the design and implementation of a complete image classification pipeline in PyTorch, supported by TensorKrowch for tensor contractions. The developed system includes data preparation, crop generation from YOLO annotations, image preprocessing, model definition through configuration files, training, evaluation and reproducible experiment logging. This proyect use the dataset ChemEq25, a dataset of laboratory equipment.
+
+The final architecture combines an \texttt{AIMPatchEmbedding}, responsible for extracting an initial visual representation, with a \texttt{HybridCustomTTN} based on hierarchical tensor blocks. Throughout the project, different design decisions were evaluated, including the type of embedding, the internal model dimension, the learning rate, regularisation, label smoothing, aspect-ratio preservation and data augmentation. The results show a progressive improvement from the first experiments to the best model obtained, which achieved 96.05\% accuracy, 95.94\% macro F1 and 99.43\% top-5 accuracy on ChemEq25.
+
+The thesis concludes that \textit{Tensor Networks} can be viably used for image classification when they are integrated into an appropriate training and preprocessing system. However, the results also show that performance does not depend only on the tensor topology, but also on the input representation, regularisation, data augmentation and experimental traceability. Therefore, the project provides a functional implementation and a critical analysis of the advantages and limitations of these models in a real visual problem.
+
+\textbf{Keywords:} Tensor Networks, deep learning, image classification, PyTorch, TensorKrowch, Tree Tensor Network, ChemEq25.
+
+\chapter*{AGRADECIMIENTOS}\label{sec:Agradecimientos}
 \addcontentsline{toc}{chapter}{AGRADECIMIENTOS}
-Se escribe al final del proyecto
+
+En primer lugar, me gustaría dar las gracias a Alejandro Mata Ali por toda la ayuda que me ha prestado. Ha seguido mi progreso de cerca en todo momento, me ha facilitado una gran cantidad de material de estudio y me ha ofrecido nuevas perspectivas siempre que me he atascado en algún problema.
+
+Quiero agradecer también a María Fuencisla Gilsanz Muñoz, mi tutora en la UEM, que igualmente ha acompañado mi trabajo en todo momento y me ha aportado numerosas ideas y mucho material durante la realización de este TFG.
+
+También quiero agradecer a todas las personas con las que he trabajado en el Instituto Tecnológico de Castilla y León (ITCL), y en especial al departamento de computación cuántica, formado por Sergio Muñiz Subiñas, Miguel Franco Hernando, Jorge Martínez Martín y Alejandro Mata Ali. Ellos han sido una pieza fundamental, pues gracias a su acompañamiento he aprendido y disfrutado enormemente de mis prácticas en el ITCL, además de recibir muchos consejos sobre el desarrollo de este proyecto. Sin ellos, nada de esto habría sido lo mismo.
+
+Quisiera dedicar una mención muy especial al profesor Iñaki Ortiz Delandaluce, que siempre ha creído en mí y cuyo apoyo incondicional ha supuesto para mí una motivación enorme. Sin él, probablemente no habría entrado en el ITCL y, muy posiblemente, este TFG no existiría.
+
+Por último, quiero agradecer a las personas más importantes para mi: mi familia; que me han apoyado siempre a lo largo de toda la carrera de física, en la que hemos atravesado momentos muy difíciles. Siempre creyeron en mí y me dieron fuerzas hasta el final.
 
 \clearpage
 \TemplateText{\textbf{Cita - frase célebre / Dedicatoria}}
 
-\TemplateText{Escribiré algo al final del proyecto}
+\textit{``It is not our part to master all the tides of the world, but to do what is in us for the succour of those years wherein we are set, uprooting the evil in the fields that we know, so that those who live after may have clean earth to till. What weather they shall have is not ours to rule.''} 
+
+J.R.R. Tolkien
 
 \chapter*{TABLA RESUMEN}
 \addcontentsline{toc}{chapter}{TABLA RESUMEN}
-\TemplateText{[Rellena esta tabla, y borra la opci\'on que no aplica. Si tu proyecto ha tenido tanto desarrollo de producto como investigaci\'on, haz constar ``SI'' en ambos casos]}
 
 \vspace{0.4cm}
 \begingroup
@@ -32,11 +57,11 @@ Se escribe al final del proyecto
 \hline
 Nombre y apellidos: & Manuel Arenas Sánchez \\
 \hline
-T\'itulo del proyecto: & Aplicacion de Tensor Networks en modelos de IA para clasificación de imágenes\ldots \\
+Título del proyecto: & Aplicacion de Tensor Networks en modelos de IA para clasificación de imágenes\ldots \\
 \hline
 Directores del proyecto: & Alejandro Mata Ali y Maria Fuencisla Gilsanz \\
 \hline
-El proyecto se ha realizado en colaboraci\'on de una empresa o a petici\'on de una empresa: & SI \\
+El proyecto se ha realizado en colaboración de una empresa o a petición de una empresa: & SI \\
 \hline
  \begin{tabular}[t]{@{}l@{}}
  El proyecto ha implementado un producto:\\
@@ -44,12 +69,12 @@ El proyecto se ha realizado en colaboraci\'on de una empresa o a petici\'on de u
  \end{tabular} &NO \\
 \hline
  \begin{tabular}[t]{@{}l@{}}
- El proyecto ha consistido en el desarrollo de una investigaci\'on o\\
- innovaci\'on:\\
+ El proyecto ha consistido en el desarrollo de una investigación o\\
+ innovación:\\
  (esta entrada se puede marcar junto a la anterior)
  \end{tabular} & SI \\
 \hline
-Objetivo general del proyecto: & [\ldots una frase\ldots] \\
+Objetivo general del proyecto: & Estudiar la implementación de las \textit{tensor networks} en \textit{deep learning} \\
 \hline
 \end{tabularx}
 \endgroup

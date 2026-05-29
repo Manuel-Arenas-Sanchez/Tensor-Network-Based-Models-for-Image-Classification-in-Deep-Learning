@@ -1,149 +1,154 @@
-# Aplicacion de Tensor Networks en modelos de IA para clasificacion de imagenes
+# Aplicación de Tensor Networks como modelos de Deep Learning para Clasificación de Imágenes
 
-Repositorio de trabajo para la memoria de mi Trabajo Fin de Grado en el Grado en Fisica de la Universidad Europea de Madrid.
+Repositorio final de mi Trabajo Fin de Grado, realizado en el Grado en Física de la Universidad Europea de Madrid durante el curso 2025-2026.
 
-El proyecto estudia el uso de Tensor Networks (TN) como alternativa o complemento a modelos convencionales de deep learning en clasificacion de imagenes. La idea central es analizar si arquitecturas tensoriales como MPS y TTN pueden convertirse en modelos entrenables, compactos y evaluables sobre un problema visual realista, manteniendo una conexion clara entre teoria, implementacion y resultados experimentales.
+El proyecto estudia la aplicación de **Tensor Networks** como modelos entrenables de *deep learning* para clasificación de imágenes. La memoria combina una revisión teórica de redes tensoriales con el desarrollo experimental de un pipeline de clasificación implementado en PyTorch y TensorKrowch.
 
-## Estado actual
+En su estado actual, este repositorio funciona como **entrega documental final** del TFG: contiene la memoria en LaTeX, el PDF compilado, la bibliografía y las figuras/resultados necesarios para la versión final del documento.
 
-La memoria se encuentra en desarrollo activo. A fecha de la ultima revision del repositorio:
+## Estado del proyecto
 
-- La introduccion incluye motivacion, estado del arte y planteamiento del problema.
-- El marco teorico explica deep learning, tensores, contracciones, notacion diagramatica, descomposiciones tensoriales y topologias MPS, TTN, MERA y PEPS.
-- La metodologia describe el pipeline completo de clasificacion: dataset, transformaciones, embeddings, red tensorial, entrenamiento y evaluacion.
-- El proyecto experimental descrito en la memoria se centra en ChemEq25, un dataset de material de laboratorio con 25 clases.
-- La arquitectura final descrita combina un front-end espacial `AIMPatchEmbedding` con una red jerarquica `HybridCustomTTN`.
+Proyecto finalizado.
 
-Quedan pendientes de cierre academico algunas partes finales de la memoria, especialmente resumen, abstract, agradecimientos, resultados, discusion, conclusiones y anexos.
+La memoria documenta el recorrido completo del trabajo:
 
-## Alcance del repositorio
+- fundamentos teóricos de tensores, contracciones y Tensor Networks;
+- estudio de topologías como MPS, TTN, PEPS y MERA;
+- diseño de un pipeline de clasificación de imágenes;
+- preparación del dataset ChemEq25 a partir de anotaciones YOLO;
+- generación de crops de objetos individuales;
+- entrenamiento de modelos basados en Tensor Networks;
+- evaluación experimental mediante accuracy, top-5 accuracy, F1 macro, matrices de confusión y curvas de pérdida;
+- análisis crítico de limitaciones y conclusiones.
 
-Este repositorio contiene principalmente:
+## Resumen técnico
 
-- La memoria LaTeX del TFG.
-- Figuras utilizadas en la memoria.
-- Bibliografia en BibTeX.
+El objetivo principal fue comprobar si una arquitectura basada en Tensor Networks podía integrarse de forma práctica en un flujo moderno de clasificación de imágenes.
 
-## Estructura del proyecto
+La arquitectura final descrita en la memoria combina:
+
+- `AIMPatchEmbedding`, que procesa la imagen como mapa 2D antes de convertirla en una secuencia;
+- `HybridCustomTTN`, una Tree Tensor Network jerárquica con bloques tensoriales y transformaciones intermedias de PyTorch;
+- una cabeza lineal de clasificación;
+- entrenamiento con `AdamW`, `CrossEntropyLoss`, *warmup*, regularización L2, *label smoothing* y *data augmentation* suave.
+
+El dataset principal fue **ChemEq25**, tratado como problema de clasificación de crops. Las imágenes originales contienen varios objetos de laboratorio, por lo que las anotaciones YOLO se usaron para generar recortes individuales asociados a una única clase.
+
+## Resultados finales
+
+El mejor experimento documentado en la memoria corresponde a la combinación `AIMPatchEmbedding + HybridCustomTTN` sobre ChemEq25.
+
+| Métrica | Valor |
+| --- | ---: |
+| Accuracy top-1 | 96,05 % |
+| Accuracy top-5 | 99,43 % |
+| Macro precision | 96,12 % |
+| Macro recall | 95,82 % |
+| Macro F1 | 95,94 % |
+| Weighted F1 | 96,05 % |
+| `classification_mAP` | 98,41 % |
+| Eval loss final | 0,2037 |
+
+Estas métricas corresponden a **clasificación de recortes**, no a detección de objetos. Por tanto, `classification_mAP` no debe compararse directamente con el `mAP@50` de detectores como YOLO o RF-DETR.
+
+La evolución experimental principal fue:
+
+| Fase | Cambio principal | Mejor accuracy |
+| --- | --- | ---: |
+| Flowers102, `CustomTTN` inicial | TTN sin transformaciones intermedias | 3,58 % |
+| Flowers102, `HybridCustomTTN` | no linealidades entre niveles | 13,60 % |
+| Flowers102, AIM + augmentation | front-end AIM y aumento de datos | 33,96 % |
+| ChemEq25 inicial | cambio al dataset principal por crops | 57,00 % |
+| ChemEq25 con menor learning rate | optimización más estable | 75,23 % |
+| ChemEq25 ajustado | warmup, dimensión 12/12, regularización y label smoothing | 88,94 % |
+| ChemEq25 final | data augmentation suave y mejor seed | 96,05 % |
+
+## Estructura del repositorio
 
 ```text
 .
-├── docs/
-│   └── thesis/
-│       ├── assets/
-│       │   └── logo_ue.png
-│       ├── chapters/
-│       │   ├── 1_preliminares.tex
-│       │   ├── 2_indices.tex
-│       │   ├── 3_Introduccion.tex
-│       │   ├── 4_Objetivos.tex
-│       │   ├── 5_Marco_Teorico.tex
-│       │   ├── 6_metodologia.tex
-│       │   ├── 8_Resultados.tex
-│       │   ├── 9_discusion.tex
-│       │   ├── 10_conclusiones.tex
-│       │   ├── 12_referencias.tex
-│       │   └── 13_anexos.tex
-│       ├── figures/
-│       │   ├── Pipeline_Scheme.png
-│       │   ├── confusion_matrix.png
-│       │   └── ... figuras de teoria y metodologia
-│       ├── output/
-│       │   └── main.pdf
-│       ├── bibliografia.bib
-│       └── main.tex
-└── README.md
+├── README.md
+├── .gitignore
+└── docs/
+    └── thesis/
+        ├── assets/
+        │   └── logo_ue.png
+        ├── bibliografia.bib
+        ├── chapters/
+        │   ├── 1_preliminares.tex
+        │   ├── 2_indices.tex
+        │   ├── 3_Introduccion.tex
+        │   ├── 4_Objetivos.tex
+        │   ├── 5_Marco_Teorico.tex
+        │   ├── 6_metodologia.tex
+        │   ├── 7_Resultados.tex
+        │   ├── 8_conclusiones.tex
+        │   ├── 9_referencias.tex
+        │   └── 10_anexos.tex
+        ├── figures/
+        │   ├── Experiments_logs/
+        │   └── figuras usadas en la memoria
+        ├── main.tex
+        └── output/
+            └── main.pdf
 ```
 
-## Capitulos de la memoria
-
-La memoria se organiza en los siguientes bloques:
-
-1. `Preliminares`: resumen, abstract, agradecimientos y tabla resumen.
-2. `Introduccion`: motivacion, estado del arte, contexto, planteamiento del problema, planificacion y recursos.
-3. `Objetivos`: objetivos generales, especificos, limites del proyecto y beneficios.
-4. `Marco Teorico`: fundamentos de deep learning, tensores, Tensor Networks y topologias principales.
-5. `Metodologia`: pipeline computacional, dataset, embeddings, MPS, TTN, AIMPatchEmbedding, entrenamiento y diagnosticos.
-6. `Resultados`: espacio reservado para resultados finales y comparativas.
-7. `Discusion`: espacio reservado para analisis critico de resultados y limitaciones.
-8. `Conclusiones`: conclusiones tecnicas y personales.
-9. `Referencias` y `Anexos`.
-
-## Bibliografia clave
-
-Las referencias centrales para el estado del arte y el marco teorico son:
-
-- `Tensor Networks Meet Neural Networks: A Survey and Future Perspectives`.
-- `Supervised Learning with Quantum-Inspired Tensor Networks`.
-- `Deep Tree Tensor Networks for Image Recognition`.
-- `Tensor Networks for Dimensionality Reduction and Large-Scale Optimization`.
-- `Tensor Decompositions and Applications`.
-- `Tensor-Train Decomposition`.
-- `Supervised learning with projected entangled pair states`.
-- `Computational Complexity of Projected Entangled Pair States`.
-- `TensorKrowch: Smooth integration of tensor networks in machine learning`.
-
-## Compilacion de la memoria
-
-La raiz LaTeX esta en `docs/thesis`.
-
-Compilacion completa recomendada:
-
-```bash
-cd docs/thesis
-pdflatex -interaction=nonstopmode main.tex
-bibtex main
-pdflatex -interaction=nonstopmode main.tex
-pdflatex -interaction=nonstopmode main.tex
-cp main.pdf output/main.pdf
-```
-
-Si `latexmk` esta disponible:
-
-```bash
-cd docs/thesis
-latexmk -pdf main.tex
-cp main.pdf output/main.pdf
-```
-
-El PDF versionado de referencia queda en:
+La copia compilada de referencia está en:
 
 ```text
 docs/thesis/output/main.pdf
 ```
 
-## Requisitos para compilar
+## Compilación local
 
-Para generar el PDF se necesita:
+Para compilar la memoria desde la raíz del repositorio:
 
-- Una distribucion LaTeX completa, como TeX Live o MacTeX.
-- BibTeX.
-- Paquetes LaTeX usados en `main.tex`, entre ellos `babel`, `graphicx`, `hyperref`, `natbib`, `amsmath`, `physics`, `siunitx`, `tensor`, `tabularx`, `booktabs`, `listings` y `quantikz` si esta instalado.
+```bash
+cd docs/thesis
+latexmk -pdf main.tex
+```
 
-## Convenciones de trabajo
+Si no se usa `latexmk`, también se puede compilar con el flujo clásico:
 
-- El archivo principal de la memoria es `docs/thesis/main.tex`.
-- Los capitulos se editan en `docs/thesis/chapters/`.
-- Las figuras deben colocarse en `docs/thesis/figures/` y referenciarse como `figures/nombre.png`.
-- La bibliografia se mantiene en `docs/thesis/bibliografia.bib`.
-- Los documentos de contexto estan en `docs/Contexto/` y sirven para conservar decisiones tecnicas, historial y guia bibliografica.
-- El PDF final debe actualizarse en `docs/thesis/output/main.pdf` tras compilar.
+```bash
+cd docs/thesis
+pdflatex main.tex
+bibtex main
+pdflatex main.tex
+pdflatex main.tex
+```
 
-## Pendientes principales
+El archivo `docs/thesis/output/main.pdf` se mantiene como PDF final de referencia. Los artefactos temporales de LaTeX generados al compilar localmente están excluidos mediante `.gitignore`.
 
-- Sustituir los textos plantilla de preliminares: resumen, abstract, agradecimientos, dedicatoria y tabla resumen.
-- Completar el capitulo de resultados con metricas finales, curvas, matriz de confusion y comparativas.
-- Redactar la discusion conectando resultados, limitaciones y decisiones metodologicas.
-- Cerrar conclusiones tecnicas y personales.
-- Revisar captions, figuras sugeridas y coherencia final de referencias cruzadas.
-- Preparar anexos si se decide incluir configuraciones, detalles de ejecucion o material complementario.
+## Compilación en Overleaf
 
-## Autor
+Para trabajar en Overleaf basta con subir el contenido de `docs/thesis/`:
 
-Manuel Arenas Sanchez
+- `main.tex`;
+- `bibliografia.bib`;
+- `chapters/`;
+- `figures/`;
+- `assets/`.
 
-## Contexto academico
+El documento usa paquetes habituales de LaTeX científico, entre ellos `babel`, `geometry`, `graphicx`, `booktabs`, `longtable`, `hyperref`, `cleveref`, `natbib`, `amsmath`, `physics`, `siunitx` y `tensor`. Si está disponible, `quantikz` se carga automáticamente; si no, el documento intenta usar `qcircuit` como alternativa.
 
-Trabajo Fin de Grado en Fisica  
-Universidad Europea de Madrid  
-Curso 2025-2026
+## Datos, código y experimentos
+
+La memoria describe un pipeline completo de investigación con PyTorch, TensorKrowch, configuraciones YAML, ejecución en servidor HPC y registro de experimentos. En esta versión del repositorio se conserva la **documentación final de la memoria** y las figuras necesarias para justificar los resultados.
+
+No se incluyen:
+
+- el dataset ChemEq25 completo;
+- checkpoints de entrenamiento;
+- carpetas completas de `runs/`;
+- entornos virtuales o dependencias locales;
+- bibliografía privada o contexto local ignorado por `.gitignore`.
+
+Las figuras de `docs/thesis/figures/Experiments_logs/` recogen las curvas y matrices de confusión usadas en la memoria final.
+
+## Autoría
+
+- **Autor:** Manuel Arenas Sánchez
+- **Titulación:** Grado en Física, Universidad Europea de Madrid
+- **Directores:** Alejandro Mata Ali y María Fuencisla Gilsanz Muñoz
+- **Curso:** 2025-2026

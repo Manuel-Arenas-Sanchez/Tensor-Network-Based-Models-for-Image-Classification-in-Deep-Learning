@@ -1,4 +1,4 @@
-\chapter{MARCO TEÓRICO}
+\chapter{MARCO TEÓRICO}\label{sec:Teoría}
 
 \section{Deep learning y clasificación de imágenes}
 
@@ -10,7 +10,7 @@ Formalizando esta descripción, dada una entrada $\mathbf{x} = (x_1, x_2, \ldots
     y = \sigma\left(\sum_{i=1}^{n} w_i x_i + b\right) = \sigma(\mathbf{w}^\top \mathbf{x} + b)
 \end{equation}
 
-donde $\mathbf{w} = (w_1, w_2, \ldots, w_n)$ es el vector de pesos sinápticos, $b$ es el sesgo (\textit{bias}), y $\sigma: \mathbb{R} \to \mathbb{R}$ es la función de activación. El argumento de $\sigma$ es una transformación afín de la entrada: un producto escalar seguido de una traslación. La no linealidad introducida por $\sigma$ es esencial, pues sin ella la composición de múltiples capas lineales se reduciría a una única transformación lineal, independientemente de la profundidad de la red \citebox{schmidhuber2015deep}.
+donde $\mathbf{w} = (w_1, w_2, \ldots, w_n)$ es el vector de pesos sinápticos, $b$ es el sesgo (\textit{bias}), y $\sigma: \mathbb{R} \to \mathbb{R}$ es la función de activación. El argumento de $\sigma$ es una transformación afín de la entrada, es decir, un producto escalar seguido de una traslación. La no linealidad introducida por $\sigma$ es esencial, pues sin ella la composición de múltiples capas lineales se reduciría a una única transformación lineal, independientemente de la profundidad de la red \citebox{schmidhuber2015deep}.
 
 \begin{figure}[H]
     \centering
@@ -19,7 +19,7 @@ donde $\mathbf{w} = (w_1, w_2, \ldots, w_n)$ es el vector de pesos sinápticos, 
     \label{fig: neural_network}
 \end{figure}
 
-Las funciones de activación más utilizadas en la práctica incluyen la sigmoide $\sigma(z) = 1/(1+e^{-z})$, la tangente hiperbólica $\sigma(z) = \tanh(z)$, y la unidad lineal rectificada (ReLU) $\sigma(z) = \max(0, z)$. La elección de la función de activación tiene consecuencias importantes sobre la dinámica del entrenamiento: funciones como la sigmoide pueden producir gradientes que se desvanecen en redes profundas, mientras que la ReLU mitiga parcialmente este problema \citebox{schmidhuber2015deep}.
+Las funciones de activación más utilizadas en la práctica incluyen la sigmoide $\sigma(z) = 1/(1+e^{-z})$, la tangente hiperbólica $\sigma(z) = \tanh(z)$, y la unidad lineal rectificada (ReLU) $\sigma(z) = \max(0, z)$. La elección de la función de activación tiene consecuencias importantes sobre la dinámica del entrenamiento. Funciones como la sigmoide pueden producir gradientes que se desvanecen en redes profundas, mientras que la ReLU mitiga parcialmente este problema \citebox{schmidhuber2015deep}.
 
 Una capa completa de la red consiste en $m$ neuronas que operan en paralelo sobre la misma entrada, produciendo un vector de salida $\mathbf{y} \in \mathbb{R}^m$:
 
@@ -53,9 +53,9 @@ El algoritmo fundamental para calcular los gradientes necesarios es la \textit{b
 
 donde $\mathbf{y}_l$ es la salida de la capa $l$-ésima. La actualización de los parámetros sigue entonces la regla $\theta \leftarrow \theta - \eta \, \partial C / \partial \theta$, donde $\eta > 0$ es la tasa de aprendizaje.
 
-La diferencia fundamental entre las redes clásicas y las redes \textit{deep} radica en su capacidad de representación. Una red con una única capa oculta puede, en teoría, aproximar cualquier función continua con la suficiente anchura, pero resulta ineficiente para capturar estructuras jerárquicas, como las que están presentes en las imágenes o en el lenguaje natural \citebox{cichocki2016tensor}. Las \textit{deep learning}, en cambio, aprenden representaciones en múltiples niveles de abstracción: las capas más bajas detectan características primitivas como bordes o frecuencias, mientras que las superiores combinan estas primitivas para reconocer objetos complejos o conceptos semánticos \citebox{wang2023tensor}.
+La diferencia fundamental entre las redes clásicas y las redes \textit{deep} radica en su capacidad de representación. Una red con una única capa oculta puede, en teoría, aproximar cualquier función continua con la suficiente anchura, pero resulta ineficiente para capturar estructuras jerárquicas, como las que están presentes en las imágenes o en el lenguaje natural \citebox{cichocki2016tensor}. Las \textit{deep learning}, en cambio, aprenden representaciones en múltiples niveles de abstracción. Las capas más bajas detectan características primitivas como bordes o frecuencias, mientras que las superiores combinan estas primitivas para reconocer objetos complejos o conceptos semánticos \citebox{wang2023tensor}.
 
-En clasificación de imágenes, las redes convolucionales han sido especialmente relevantes porque incorporan localidad espacial y pesos compartidos. Estas dos propiedades son adecuadas para datos visuales: los píxeles vecinos tienden a estar relacionados, y los mismos patrones pueden aparecer en distintas regiones de la imagen. La \figref{fig: 1} muestra algunas topologías básicas de redes neuronales.
+En clasificación de imágenes, las redes convolucionales han sido especialmente relevantes porque incorporan localidad espacial y pesos compartidos. Estas dos propiedades son adecuadas para datos visuales, porque los píxeles vecinos tienden a estar relacionados, y los mismos patrones pueden aparecer en distintas regiones de la imagen. La \figref{fig: 1} muestra algunas topologías básicas de redes neuronales.
 
 \begin{figure}[H]
     \centering
@@ -64,7 +64,7 @@ En clasificación de imágenes, las redes convolucionales han sido especialmente
     \label{fig: 1}
 \end{figure}
 
-El éxito de estas arquitecturas no elimina sus limitaciones. Muchos modelos modernos alcanzan buenos resultados con un número elevado de parámetros y con un coste computacional considerable. Este TFG se sitúa en ese punto; estudia si las TN pueden proporcionar modelos de clasificación estructurados, capaces de representar funciones complejas mediante factorizaciones tensoriales controladas.
+El éxito de estas arquitecturas no elimina sus limitaciones. Muchos modelos modernos alcanzan buenos resultados con un número elevado de parámetros y con un coste computacional considerable. Este TFG se sitúa en ese punto. Estudia si las TN pueden proporcionar modelos de clasificación estructurados, capaces de representar funciones complejas mediante factorizaciones tensoriales controladas.
 
 \section{Tensores}
 
@@ -107,16 +107,16 @@ Esto sería la contracción de una matriz consigo misma a través de sus índice
 
 La representación algebraica de las contracciones tensoriales, aunque precisa, se vuelve rápidamente inmanejable a medida que aumenta el número de tensores y la complejidad de sus conexiones. Fue Roger Penrose \citebox{penrose1971applications} quien, a principios de la década de 1970, introdujo la notación diagramática para tensores, proporcionando una alternativa visual que transformó la manera en que se razona sobre estas estructuras. Los diagramas de redes tensoriales son hoy ampliamente utilizados para describir algoritmos cuánticos y algoritmos de \textit{machine learning} \citebox{wang2023tensor}.
 
-La idea central de la notación de Penrose es representar cada tensor como un nodo del que emanan tantas aristas como índices tenga el tensor. Concretamente: un nodo con una sola arista representa un vector $\mathbf{a} \in \mathbb{R}^I$; un nodo con dos aristas representa una matriz $\mathbf{A} \in \mathbb{R}^{I \times J}$; y un nodo con tres aristas representa un tensor $\boldsymbol{\mathcal{A}} \in \mathbb{R}^{I_1 \times I_2 \times I_3}$. Para indicar que un par de índices tensoriales está siendo contraído, ambas aristas se unen mediante una línea. Por ejemplo, la contracción de un tensor de orden uno con uno de orden dos es la multiplicación matriz-vector habitual. Las aristas que no se conectan a ningún otro tensor se denominan aristas libres, y el número de estas aristas en el diagrama resultante es precisamente el orden del tensor final. Dos nodos que no están unidos mediante aristas, representan el producto tensorial entre ellos.
+La idea central de la notación de Penrose es representar cada tensor como un nodo del que emanan tantas aristas como índices tenga el tensor. Concretamente, un nodo con una sola arista representa un vector $\mathbf{a} \in \mathbb{R}^I$; un nodo con dos aristas representa una matriz $\mathbf{A} \in \mathbb{R}^{I \times J}$; y un nodo con tres aristas representa un tensor $\boldsymbol{\mathcal{A}} \in \mathbb{R}^{I_1 \times I_2 \times I_3}$. Para indicar que un par de índices tensoriales está siendo contraído, ambas aristas se unen mediante una línea. Por ejemplo, la contracción de un tensor de orden uno con uno de orden dos es la multiplicación matriz-vector habitual. Las aristas que no se conectan a ningún otro tensor se denominan aristas libres, y el número de estas aristas en el diagrama resultante es precisamente el orden del tensor final. Dos nodos que no están unidos mediante aristas, representan el producto tensorial entre ellos.
 
 \begin{figure}[H]
     \centering
     \includegraphics[width=1.0\linewidth]{figures/TN_invented.png}
-    \caption{Representación de una TN inventada. En esta representación se pueden identificar muchas de las operaciones descritas en esta sección. Elaboración propia.}
+    \caption{Representación de una TN inventada. En esta representación se pueden identificar muchas de las operaciones descritas en esta sección. Elaboración propia usando la librería Tensor-Network-Editor, creada por Alejandro Mata Ali. \citebox{Mata_Ali_Tensor_Network_Editor_2026}}
     \label{fig:Invented_TN}
 \end{figure}
 
-La notación gráfica tensorial ofrece numerosas ventajas sobre la notación tradicional: en forma gráfica, los índices no necesitan nombres ni etiquetas; operaciones como el producto escalar, la traza tensorial y la contracción pueden expresarse sin notación adicional; y el orden del tensor resultante puede leerse simplemente contando el número de aristas libres. En particular, si en el diagrama no quedan aristas libres tras todas las contracciones, el resultado es necesariamente un escalar. Esta propiedad convierte los diagramas en una herramienta de verificación inmediata de la consistencia dimensional de operaciones complejas \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Sobre esta base visual puede introducirse ya, de manera natural, el concepto de \textit{Tensor Network (TN)}.
+La notación gráfica tensorial ofrece numerosas ventajas sobre la notación tradicional. En forma gráfica, los índices no necesitan nombres ni etiquetas; operaciones como el producto escalar, la traza tensorial y la contracción pueden expresarse sin notación adicional; y el orden del tensor resultante puede leerse simplemente contando el número de aristas libres. En particular, si en el diagrama no quedan aristas libres tras todas las contracciones, el resultado es necesariamente un escalar. Esta propiedad convierte los diagramas en una herramienta de verificación inmediata de la consistencia dimensional de operaciones complejas \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Sobre esta base visual puede introducirse ya, de manera natural, el concepto de \textit{Tensor Network (TN)}.
 
 Una TN es, en esencia, una representación gráfica de una ecuación multilineal entre diferentes tensores. Esta representación se apoya en la notación diagramática de Penrose, que con el tiempo se ha ido adaptando a las necesidades de disciplinas como la física, las matemáticas o la ciencia computacional \citebox{biamonte2017tensornetworksnutshell}. Puede verse un ejemplo en la \figref{fig: TensorNetwork}, donde aparece la TN que representa el 2-tensor $\tensor{T}{_{i}_{p}}$ cuyos elementos se obtienen mediante la operación de contracción
 
@@ -241,7 +241,7 @@ El \textit{Matrix Product State} (MPS), o Tensor Train (TT), es la topología de
 
 El MPS es la representación más natural de los estados fundamentales de los sistemas cuánticos unidimensionales con interacciones locales, lo que lo hace bastante famoso en el campo de la física.
 
-Las correlaciones que un MPS puede representar decaen exponencialmente con la distancia entre sitios: la función de correlación entre los sitios $i$ y $j$ satisface $\langle O_i O_j \rangle - \langle O_i \rangle \langle O_j \rangle \sim e^{-|i-j|/\xi}$, donde $\xi$ es una longitud de correlación que depende de la dimensión de enlace $D$ \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Esto significa que el MPS es especialmente eficiente para capturar correlaciones locales o de corto alcance, pero puede requerir dimensiones de enlace elevadas para representar correlaciones de largo alcance.
+Las correlaciones que un MPS puede representar decaen exponencialmente con la distancia entre sitios. La función de correlación entre los sitios $i$ y $j$ satisface $\langle O_i O_j \rangle - \langle O_i \rangle \langle O_j \rangle \sim e^{-|i-j|/\xi}$, donde $\xi$ es una longitud de correlación que depende de la dimensión de enlace $D$ \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Esto significa que el MPS es especialmente eficiente para capturar correlaciones locales o de corto alcance, pero puede requerir dimensiones de enlace elevadas para representar correlaciones de largo alcance.
 
 El MPS es muy relevante porque combina una interpretación física sólida, algoritmos de contracción manejables e implementaciones maduras. En aprendizaje supervisado, Stoudenmire y Schwab lo utilizaron para parametrizar clasificadores de imágenes sobre MNIST, alcanzando error de test inferior al $1\%$ en ese conjunto \citebox{stoudenmire2017supervisedlearningquantuminspiredtensor}. Su limitación principal es que impone una geometría unidimensional, y una imagen 2D debe linealizarse antes de entrar en la red.
 

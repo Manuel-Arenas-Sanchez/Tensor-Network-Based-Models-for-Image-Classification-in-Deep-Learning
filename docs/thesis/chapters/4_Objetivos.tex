@@ -1,31 +1,35 @@
-\chapter{OBJETIVOS}
+\chapter{OBJETIVOS}\label{sec:Objetivos}
 
 \section{Objetivos generales}
-El objetivo general del trabajo consiste en ampliar el conocimiento actual sobre la aplicación de las Tensor Networks como paradigma alternativo al deep learning convencional en tareas de clasificación de imágenes, evaluando su viabilidad, rendimiento y eficiencia mediante la implementación y experimentación con distintas arquitecturas tensoriales.
+El objetivo general del trabajo consiste en estudiar la aplicación de las Tensor Networks como una alternativa dentro del \textit{deep learning} para tareas de clasificación de imágenes, evaluando su viabilidad práctica mediante la implementación, entrenamiento y análisis experimental de modelos tensoriales.
 
-Para ello, el proyecto contempla el estudio en profundidad del estado del arte en modelos de inteligencia artificial basados en Tensor Networks, la implementación de al menos dos arquitecturas tensoriales a partir de la literatura científica, su entrenamiento y evaluación utilizando recursos de computación de altas prestaciones (HPC) del servidor Lorca de la Universidad Europea, y la comparación de sus resultados frente a modelos clásicos de deep learning sobre conjuntos de datos de referencia.
+Para ello, el proyecto contempla el estudio del estado del arte en modelos de inteligencia artificial basados en Tensor Networks, el desarrollo de un pipeline de clasificación de imágenes, la implementación de arquitecturas tensoriales entrenables y la evaluación de su comportamiento sobre conjuntos de datos adecuados. El propósito no es demostrar que estos modelos sustituyan de forma general a las arquitecturas convencionales de clasificación de imágenes, sino analizar hasta qué punto pueden utilizarse en un problema realista de clasificación y qué limitaciones aparecen durante su desarrollo.
 
-De forma complementaria, el proyecto persigue adquirir experiencia práctica en el uso de herramientas computacionales propias del ámbito de la investigación en inteligencia artificial, incluyendo el manejo de entornos HPC, el uso de librerías especializadas como PyTorch y TensorKrowch, y las buenas prácticas de documentación y reproducibilidad del código científico.
+De forma complementaria, el proyecto persigue adquirir experiencia práctica en el uso de herramientas computacionales propias del ámbito de la investigación en inteligencia artificial, incluyendo el manejo de entornos de entrenamiento, el uso de librerías como PyTorch y TensorKrowch, la ejecución de experimentos en recursos de computación de altas prestaciones y la documentación reproducible del código científico.
 
 \section{Objetivos específicos}
 
 \begin{enumerate}
 
-	\item Realizar una revisión del estado del arte de los modelos de inteligencia artificial basados en Tensor Networks aplicados a la clasificación de imágenes, analizando las arquitecturas más relevantes y sus principales resultados.
+	\item Realizar una revisión del estado del arte de los modelos de inteligencia artificial basados en Tensor Networks aplicados a la clasificación de imágenes, analizando las arquitecturas más relevantes y sus principales características.
 
-	\item Estudiar en detalle distintos modelos tensoriales para clasificación de imágenes, con el fin de comprender su funcionamiento y sus diferencias fundamentales.
+	\item Estudiar los fundamentos teóricos y prácticos de las Tensor Networks, con especial atención a su representación como modelos entrenables y a su integración en tareas de \textit{machine learning}.
 
-	\item Implementar al menos dos modelos de inteligencia artificial basados en Tensor Networks para tareas de clasificación de imágenes, a partir de descripciones presentes en la literatura científica.
+	\item Diseñar un \textit{pipeline} computacional para clasificación de imágenes, que permita organizar de forma clara la carga de datos, las transformaciones, el modelo, el entrenamiento, la evaluación y el registro de resultados.
 
-	\item Entrenar y evaluar los modelos implementados utilizando recursos de computación de altas prestaciones (HPC), familiarizándose con el uso de servidores, entornos de ejecución y herramientas básicas de gestión de trabajos.
+	\item Implementar modelos o variantes de modelos basados en Tensor Networks para tareas de clasificación de imágenes, utilizando herramientas compatibles con entrenamiento mediante diferenciación automática.
 
-	\item Comparar el rendimiento de los modelos basados en Tensor Networks con modelos de inteligencia artificial convencionales, empleando conjuntos de datos de referencia en clasificación de imágenes.
+	\item Entrenar y evaluar los modelos desarrollados utilizando recursos computacionales adecuados, familiarizándose con el uso de servidores, entornos de ejecución, dependencias y herramientas básicas de gestión de experimentos.
 
-	\item Analizar los resultados obtenidos en términos de precisión, eficiencia computacional y comportamiento del entrenamiento, identificando las principales ventajas y limitaciones de los enfoques tensoriales.
+	\item Comparar distintas configuraciones del modelo y del proceso de entrenamiento, analizando cómo afectan decisiones como la representación de la imagen, la dimensión interna del modelo, la regularización o el aumento de datos.
 
-	\item Documentar el desarrollo del proyecto, describiendo de forma clara los modelos estudiados, las implementaciones realizadas y los resultados obtenidos.
+	\item Analizar los resultados obtenidos mediante métricas de clasificación, curvas de entrenamiento y diagnósticos que permitan interpretar el comportamiento del aprendizaje y los principales patrones de error.
 
-	\item Preparar y organizar un repositorio de código que recoja las implementaciones y experimentos realizados, garantizando su claridad, reproducibilidad y correcta documentación.
+	\item Identificar las principales ventajas y limitaciones de los enfoques tensoriales estudiados en el contexto de la clasificación de imágenes.
+
+	\item Documentar el desarrollo del proyecto, describiendo de forma clara los modelos estudiados, las implementaciones realizadas, los experimentos ejecutados y los resultados obtenidos.
+
+	\item Preparar y organizar un repositorio de código que recoja las implementaciones y experimentos realizados, favoreciendo su claridad, reproducibilidad y mantenimiento.
 	
 \end{enumerate}
 
@@ -33,21 +37,22 @@ De forma complementaria, el proyecto persigue adquirir experiencia práctica en 
 
 \begin{itemize}
 
-	\item Estudiar modelos de inteligencia artificial no aplicados a la clasificación de imágenes y que no estén basados en Tensor Networks.
+	\item Estudiar modelos de inteligencia artificial no relacionados con Tensor Networks o no orientados a tareas de clasificación de imágenes.
 
-	\item Evaluar los modelos en conjuntos de datos distintos de los considerados en el proyecto, o realizar comparaciones extensivas en múltiples benchmarks adicionales.
+	\item Resolver otros problemas del campo de la inteligencia artificial, como detección de objetos, segmentación semántica o generación de imágenes.
+
+	\item Realizar una comparación exhaustiva frente a todas las arquitecturas convencionales de \textit{deep learning}, o evaluar los modelos en un gran número de benchmarks adicionales.
 
 	\item Ejecutar los modelos en hardware cuántico real, más allá de enfoques cuántico-inspirados ejecutados en sistemas clásicos.
 
-	\item Desarrollar aplicaciones orientadas a entornos industriales o sistemas en producción a partir de los modelos estudiados.
+	\item Desarrollar aplicaciones orientadas a entornos industriales, sistemas en producción o herramientas de inferencia en tiempo real a partir de los modelos estudiados.
 	
 \end{itemize}
 
 \section{Beneficios del proyecto}
 
-Este proyecto contribuye a ampliar el conocimiento empírico sobre las Tensor Networks como herramienta de aprendizaje automático. Si bien el fundamento teórico de estas arquitecturas está bien establecido en el ámbito de la física cuántica y matemática, su comportamiento práctico en tareas de clasificación de imágenes sigue siendo un área activa de investigación. El trabajo aportará evidencia experimental concreta sobre estas cuestiones.
+Este proyecto contribuye a ampliar el conocimiento sobre las Tensor Networks como herramienta de aprendizaje automático. Aunque el fundamento teórico de estas arquitecturas está bien establecido en el ámbito de la física cuántica y el álgebra multilineal, su comportamiento práctico en tareas de clasificación de imágenes sigue siendo un área activa de investigación. El trabajo permite analizar qué dificultades aparecen al trasladar estas ideas a un pipeline real de \textit{deep learning}.
 
-Desde el punto de vista computacional, el proyecto favorece el desarrollo de modelos de IA más eficientes en el uso de parámetros. Los modelos basados en Tensor Networks permiten, en principio, representar funciones complejas con un número significativamente menor de parámetros que las redes neuronales profundas convencionales. Esto tiene implicaciones directas sobre el coste energético y computacional del entrenamiento, un aspecto de creciente relevancia en la investigación en inteligencia artificial.
+Desde el punto de vista computacional, el proyecto permite explorar modelos estructurados en los que la capacidad se controla mediante decisiones como la topología de la red, la dimensión de enlace o la representación de entrada. Esto ofrece una perspectiva complementaria a la de las \textit{deep learning} convencionales, centrada en introducir sesgos estructurales y operaciones tensoriales en el proceso de aprendizaje.
 
-La realización de este proyecto supone una experiencia muy íntegra en investigación aplicada: comprende la revisión crítica de literatura científica, el diseño e implementación de experimentos reproducibles, el uso de infraestructuras HPC y el aprendizaje de herramientas y flujos de trabajo propios del ámbito profesional de la investigación en IA. Estos conocimientos y competencias son directamente transferibles a entornos académicos y laborales en el campo de la física y la computación científica.
-
+La realización de este proyecto supone también una experiencia práctica en investigación aplicada. Comprende la revisión crítica de literatura científica, el diseño e implementación de experimentos reproducibles, el uso de infraestructuras de entrenamiento y el aprendizaje de herramientas y flujos de trabajo propios del ámbito profesional de la inteligencia artificial. Estos conocimientos son transferibles a entornos académicos y laborales relacionados con la física, la computación científica y el aprendizaje automático.
