@@ -12,6 +12,7 @@
 *.toc
 
 # Local compiled thesis copy; keep docs/thesis/output/main.pdf versioned instead
+docs/thesis/build/
 docs/thesis/main.pdf
 docs/thesis/main.lof
 docs/thesis/main.lot
