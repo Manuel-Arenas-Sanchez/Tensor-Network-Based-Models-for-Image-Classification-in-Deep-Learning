@@ -1,0 +1,147 @@
+% ============================================================================
+% GLOSARIO
+% Capítulo de consulta situado antes de las Referencias.
+% Se organiza en tres bloques: acrónimos y siglas, conceptos teóricos y
+% términos de implementación y código.
+% ============================================================================
+\chapter*{GLOSARIO}\label{sec:glosario}
+\addcontentsline{toc}{chapter}{GLOSARIO}
+
+Este glosario reúne los principales términos empleados a lo largo del trabajo. Se divide en tres bloques: un listado de acrónimos y siglas, un glosario de conceptos teóricos relacionados con las redes tensoriales y el aprendizaje profundo, y un glosario de los términos específicos de la implementación y del código desarrollado. Las definiciones de este último bloque se han redactado a partir del código fuente del proyecto y describen el comportamiento real de cada componente.
+
+\section*{Acrónimos y siglas}
+\addcontentsline{toc}{section}{Acrónimos y siglas}
+
+\begin{description}
+  \item[\textbf{AIM}] \textit{Antisymmetric Interaction Module}. Módulo de interacción que combina dos ramas de operaciones aplicadas en orden inverso mediante un producto elemento a elemento, introduciendo una interacción multiplicativa (bilineal) entre las características de la imagen.
+  \item[\textbf{AdamW}] \textit{Adam with decoupled Weight decay}. Variante del optimizador Adam que incorpora de forma desacoplada la penalización por reducción de pesos (\textit{weight decay}).
+  \item[\textbf{BatchNorm}] \textit{Batch Normalization}. Normalización por lotes: reescala las activaciones usando estadísticas del propio lote para estabilizar el entrenamiento.
+  \item[\textbf{CNN}] \textit{Convolutional Neural Network}. Red neuronal convolucional, arquitectura clásica de visión artificial basada en la localidad espacial y en pesos compartidos.
+  \item[\textbf{CP}] \textit{Canonical Polyadic}. Descomposición tensorial que expresa un tensor como suma de tensores de rango 1.
+  \item[\textbf{DMRG}] \textit{Density Matrix Renormalization Group}. Grupo de renormalización de la matriz densidad, algoritmo de referencia en física de muchos cuerpos, estrechamente ligado a las MPS.
+  \item[\textbf{DTTN}] \textit{Deep Tree Tensor Network}. Red tensorial jerárquica profunda; el trabajo del que se inspira el bloque AIM empleado en el \textit{embedding}.
+  \item[\textbf{ChemEq25}] \textit{Chemistry Lab Apparatus dataset}. Conjunto de datos de imágenes reales de material de laboratorio, con 25 clases, utilizado como dataset principal del trabajo.
+  \item[\textbf{F1}] Media armónica de la precisión y la exhaustividad (\textit{recall}); métrica de clasificación por clase.
+  \item[\textbf{GPU}] \textit{Graphics Processing Unit}. Unidad de procesamiento gráfico, empleada para acelerar el entrenamiento de los modelos.
+  \item[\textbf{HOSVD}] \textit{Higher-Order Singular Value Decomposition}. Descomposición en valores singulares de orden superior; caso ortogonal de la descomposición de Tucker.
+  \item[\textbf{HPC}] \textit{High-Performance Computing}. Computación de altas prestaciones; en este trabajo, los servidores Lorca de la UEM.
+  \item[\textbf{IA}] Inteligencia artificial.
+  \item[\textbf{ITCL}] Instituto Tecnológico de Castilla y León.
+  \item[\textbf{MERA}] \textit{Multi-scale Entanglement Renormalization Ansatz}. Red tensorial jerárquica con desentrelazadores que representa correlaciones a todas las escalas de longitud.
+  \item[\textbf{MLP}] \textit{Multi-Layer Perceptron}. Perceptrón multicapa; opción de cabeza de clasificación con una capa oculta.
+  \item[\textbf{MNIST}] \textit{Modified National Institute of Standards and Technology}. Conjunto de datos de dígitos manuscritos, referencia clásica en clasificación de imágenes.
+  \item[\textbf{MPS}] \textit{Matrix Product State}. Estado de producto de matrices; topología de red tensorial en cadena lineal, equivalente al formato Tensor Train.
+  \item[\textbf{PEPS}] \textit{Projected Entangled Pair States}. Generalización bidimensional de la MPS, en la que cada tensor se conecta con cuatro vecinos.
+  \item[\textbf{ReLU}] \textit{Rectified Linear Unit}. Unidad lineal rectificada, función de activación $\sigma(z)=\max(0,z)$.
+  \item[\textbf{ResNet50}] \textit{Residual Network} de 50 capas. Arquitectura convolucional estándar empleada como modelo de referencia.
+  \item[\textbf{RGB}] \textit{Red, Green, Blue}. Los tres canales de color de una imagen.
+  \item[\textbf{SVD}] \textit{Singular Value Decomposition}. Descomposición en valores singulares; herramienta algebraica fundamental de las redes tensoriales.
+  \item[\textbf{TFG}] Trabajo de Fin de Grado.
+  \item[\textbf{TN}] \textit{Tensor Network}. Red tensorial; representación factorizada de un tensor de alto orden mediante tensores de menor orden conectados.
+  \item[\textbf{TT}] \textit{Tensor Train}. Tren de tensores; nombre del formato MPS en el contexto del análisis numérico.
+  \item[\textbf{TTN}] \textit{Tree Tensor Network}. Red tensorial en forma de árbol; topología jerárquica empleada en la arquitectura propuesta.
+  \item[\textbf{Tucker}] Descomposición tensorial que introduce un tensor núcleo que acopla varias matrices de factores.
+  \item[\textbf{UEM}] Universidad Europea de Madrid.
+  \item[\textbf{YAML}] \textit{Yet Another Markup Language}. Formato de texto empleado para los archivos de configuración de los experimentos.
+  \item[\textbf{YOLO}] \textit{You Only Look Once}. Familia de modelos de detección de objetos; en este trabajo se refiere al formato de sus anotaciones.
+\end{description}
+
+\section*{Conceptos teóricos}
+\addcontentsline{toc}{section}{Conceptos teóricos}
+
+\begin{description}
+  \item[\textbf{Tensor}] Objeto matemático de orden $N$ cuyos elementos poseen $N$ índices; generaliza los conceptos de escalar (orden 0), vector (orden 1) y matriz (orden 2) a dimensiones arbitrarias. Desde el punto de vista computacional, un \textit{array} multidimensional.
+  \item[\textbf{Orden (o modo) de un tensor}] Número de índices del tensor, es decir, número de dimensiones que posee. Cada modo tiene una longitud asociada.
+  \item[\textbf{Contracción tensorial}] Operación por la cual dos (o más) tensores se combinan sumando sobre uno o varios pares de índices compartidos. Al contraer un tensor de orden $n$ con uno de orden $m$ a lo largo de $q$ pares de índices, el resultado tiene orden $n+m-2q$. Generaliza el producto matricial y el producto escalar.
+  \item[\textbf{Traza}] Contracción de una matriz consigo misma a través de un par de índices repetidos, $\mathrm{Tr}(\mathbf{A})=\sum_i A_{ii}$.
+  \item[\textbf{Producto exterior}] Operación (denotada $\circ$) que combina vectores para formar un tensor de rango 1; base de la descomposición CP.
+  \item[\textbf{Notación diagramática de Penrose}] Representación visual de los tensores como nodos con tantas aristas como índices. Las aristas unidas representan índices contraídos y las aristas libres, los índices del tensor resultante. El número de aristas libres es el orden del tensor final.
+  \item[\textbf{Red tensorial (Tensor Network)}] Representación factorizada de un tensor de alto orden como una colección de tensores de menor orden conectados por índices compartidos, en lugar de almacenar explícitamente todos sus elementos.
+  \item[\textbf{Índice físico (o de entrada)}] Índice que conecta la red tensorial con los datos. Queda libre tras las contracciones y corresponde a una posición de entrada, característica o salida del modelo.
+  \item[\textbf{Índice virtual (o de enlace)}] Índice interno que conecta dos tensores de la red y que se suma durante la contracción; no aparece en el tensor final, pero controla cuánta información puede transmitirse entre las distintas partes de la red.
+  \item[\textbf{Dimensión de enlace (\textit{bond dimension})}] Dimensión de los índices virtuales. Es el hiperparámetro principal que regula el compromiso entre compacidad (pocos parámetros) y capacidad de representar correlaciones complejas.
+  \item[\textbf{Maldición de la dimensionalidad}] Crecimiento exponencial ($d^N$) del número de componentes de un tensor de orden $N$ con índices de dimensión $d$, que hace inviable su almacenamiento y manipulación directos. Las redes tensoriales surgen para mitigar este problema.
+  \item[\textbf{Entrelazamiento}] En física cuántica de muchos cuerpos, medida de las correlaciones entre partes de un sistema. Los estados con entrelazamiento limitado admiten representaciones tensoriales compactas.
+  \item[\textbf{Mapa local de características (\textit{feature map})}] Transformación $\phi(x)$ que lleva cada posición de entrada a un vector de dimensión local $d$. El producto tensorial de estos vectores define la representación de la entrada que se contrae con la red tensorial.
+  \item[\textbf{Descomposición en valores singulares (SVD)}] Factorización $\mathbf{A}=\mathbf{U}\boldsymbol{\Sigma}\mathbf{V}^\top$ de una matriz. Permite obtener la mejor aproximación de bajo rango en norma de Frobenius y es la herramienta básica para construir formatos como el Tensor Train.
+  \item[\textbf{Teorema de Eckart--Young}] Resultado que garantiza que, al conservar solo los mayores valores singulares de una matriz, se obtiene su mejor aproximación de rango reducido.
+  \item[\textbf{Descomposición CP}] Aproximación de un tensor como suma de $R$ tensores de rango 1. Muy compacta, pero determinar el rango CP es un problema NP-difícil.
+  \item[\textbf{Descomposición de Tucker}] Factorización de un tensor mediante un tensor núcleo que acopla varias matrices de factores. Más flexible que CP, pero su núcleo crece exponencialmente con el orden.
+  \item[\textbf{Tensor Train / Matrix Product State (MPS)}] Representación de un tensor de orden $N$ como una cadena de tensores locales conectados por índices virtuales. Su número de parámetros crece linealmente con $N$ si los rangos se mantienen acotados. Es la topología de red tensorial más estudiada.
+  \item[\textbf{Tree Tensor Network (TTN)}] Topología jerárquica en forma de árbol: las hojas se asocian a las posiciones de entrada y se contraen por grupos hacia niveles superiores hasta un único tensor raíz. La distancia efectiva entre dos hojas crece como $\mathcal{O}(\log N)$, lo que favorece las correlaciones de largo alcance frente a la MPS.
+  \item[\textbf{Hoja (\textit{leaf})}] Tensor del nivel más bajo de una TTN, asociado directamente a una posición de entrada.
+  \item[\textbf{Tensor raíz}] Único tensor del nivel superior de una TTN, cuya salida resume toda la entrada y sobre la que se realiza la clasificación.
+  \item[\textbf{MERA}] Red tensorial jerárquica que, además de las capas de renormalización (isometrías) de una TTN, introduce \textit{disentanglers} para eliminar el entrelazamiento de corto alcance, permitiendo representar correlaciones a todas las escalas.
+  \item[\textbf{Disentangler (desentrelazador)}] Tensor de la MERA que actúa sobre pares de posiciones vecinas para eliminar el entrelazamiento de corto alcance antes de la renormalización.
+  \item[\textbf{PEPS}] Generalización bidimensional de la MPS en la que cada tensor se conecta con cuatro vecinos, reflejando la geometría de una rejilla. Su contracción exacta es \#P-difícil.
+  \item[\textbf{Grupo de renormalización}] Marco de la física en el que cada capa jerárquica describe el sistema a una escala de longitud distinta; interpretación natural de las capas de la MERA.
+  \item[\textbf{Linealización (recorrido en zigzag)}] Ordenación de las posiciones de una imagen bidimensional en una secuencia unidimensional. El recorrido en zigzag alterna el sentido de recorrido en filas consecutivas para preservar en parte la vecindad espacial.
+  \item[\textbf{Sesgo inductivo}] Conjunto de suposiciones que una arquitectura incorpora sobre la estructura de los datos; por ejemplo, la localidad espacial y los pesos compartidos de las convoluciones.
+  \item[\textbf{Logits}] Puntuaciones por clase sin normalizar que produce el modelo antes de convertirse en probabilidades. Se comparan con la etiqueta real mediante la función de pérdida.
+\end{description}
+
+\section*{Términos de implementación y código}
+\addcontentsline{toc}{section}{Términos de implementación y código}
+
+Las definiciones de este bloque describen componentes concretos del código desarrollado para el trabajo (paquete \texttt{tn\_dl}). Los nombres en tipografía monoespaciada corresponden a clases, funciones o hiperparámetros tal y como aparecen en el proyecto.
+
+\subsection*{Componentes de la arquitectura}
+\addcontentsline{toc}{subsection}{Componentes de la arquitectura}
+
+\begin{description}
+  \item[\texttt{AIMPatchEmbedding}] Clase del \textit{embedding} definitivo del proyecto. Transforma una imagen \texttt{[B, C, H, W]} en una secuencia \texttt{[B, L, local\_dim]} conservando la estructura espacial bidimensional hasta el último paso. Aplica un \textit{stem} convolucional que reduce la resolución (para $224\times224$ y \texttt{patch\_size = 16}: $224\to112\to56\to28\to14$), después \texttt{num\_aim\_blocks} bloques \texttt{AIM2D}, una convolución $1\times1$ que ajusta los canales a \texttt{local\_dim} y, finalmente, un aplanado con recorrido en zigzag que produce las $196$ posiciones de entrada.
+  \item[\texttt{AIM2D}] Implementación del \textit{Antisymmetric Interaction Module} adaptado a imágenes. Recibe y devuelve un mapa \texttt{[B, C, H, W]}. Construye dos ramas que aplican las mismas operaciones (una transformación lineal sobre canales y una convolución) en orden inverso, las combina mediante un producto de Hadamard (obteniendo una interacción bilineal, sin activaciones ni sesgos intermedios), normaliza con \textit{LayerNorm}, proyecta de vuelta a los canales originales con una convolución $1\times1$ y suma el resultado a la entrada mediante una conexión residual con factor de escala entrenable.
+  \item[\texttt{HybridCustomTTN}] Clase que implementa la red tensorial jerárquica (TTN) propuesta. Construye niveles sucesivos (\texttt{TTNLevel}) que agrupan las posiciones de tres en tres, reduciéndolas nivel a nivel ($196\to66\to22\to8\to3\to1$: cinco niveles tensoriales y cuatro transformaciones intermedias) hasta un único vector raíz. Es «híbrida» porque las contracciones tensoriales se realizan con TensorKrowch, mientras que las transformaciones entre niveles, el entrenamiento y la integración del modelo se gestionan con PyTorch.
+  \item[\texttt{TTNLevel}] Clase que representa un único nivel del árbol de la TTN. Se implementa como una red tensorial independiente que contrae sus bloques de tres nodos y devuelve un tensor de PyTorch ordinario. Rellena con nodos de \textit{padding} el último grupo cuando el número de posiciones no es múltiplo de tres.
+  \item[\texttt{MPSClassifier}] Clase que envuelve una capa MPS (basada en la librería TensorKrowch) para usarla como clasificador. Recibe la secuencia de vectores locales y la contrae con una cadena MPS para producir las puntuaciones de clase. Corresponde a la opción de topología en cadena del proyecto.
+  \item[\texttt{MPSClassifier\_1}] Clase que envuelve la red \texttt{HybridCustomTTN} y le añade una cabeza de clasificación. Toma el vector raíz de dimensión \texttt{bond\_dim} y lo transforma en las puntuaciones de las clases mediante una capa lineal o, opcionalmente, un pequeño perceptrón multicapa (MLP) con \textit{dropout}.
+  \item[\texttt{PatchEmbedding}] Clase del primer \textit{embedding} probado. Divide la imagen en cuadrados (\textit{patches}) y proyecta cada uno de forma independiente con una capa lineal. Se descartó como versión final porque, al construir la secuencia, pierde la estructura bidimensional y la vecindad entre cuadrados contiguos.
+  \item[\texttt{TrigPixelEmbedding}] \textit{Embedding} de tipo cuántico-inspirado que mapea cada valor de píxel (con \texttt{local\_dim = 2}) al par $(\cos\theta, \sin\theta)$ con $\theta = \text{valor}\cdot\pi/2$. Implementa el mapa local de características $\phi(x)$ descrito en el marco teórico.
+  \item[\texttt{ParamNode}] Tipo de nodo de la librería TensorKrowch cuyos valores se registran como parámetros entrenables del modelo y reciben gradientes durante el entrenamiento. Los tensores de cada bloque de la TTN se declaran de este tipo; si se crearan como nodos ordinarios, no se optimizarían.
+  \item[\textbf{Nodos de \textit{padding} (relleno)}] Nodos constantes y no entrenables, con vector fijo $[1, 0, \dots, 0]$, que completan un grupo de tres cuando faltan posiciones. Permiten que el bloque se contraiga sin aportar parámetros ni introducir información.
+  \item[\textbf{\textit{Stem} convolucional}] Bloque inicial del \texttt{AIMPatchEmbedding} que sustituye el corte en cuadrados por una pila de bloques (convolución con paso 2, \textit{BatchNorm} y \textit{ReLU}). Extrae características locales básicas y reduce a la mitad la resolución espacial en cada bloque.
+  \item[\textbf{Cabeza de clasificación}] Etapa final que convierte el vector raíz de la red tensorial en las puntuaciones por clase. En su versión de referencia es una única capa lineal (\texttt{bond\_dim} $\to$ número de clases); opcionalmente, un MLP con una capa oculta, activación y \textit{dropout}.
+  \item[\textbf{\textit{Embedding}}] Etapa que transforma una imagen \texttt{[B, C, H, W]} en la secuencia \texttt{[B, L, local\_dim]} que espera la red tensorial. Determina qué información espacial llega a la red y en qué forma.
+\end{description}
+
+\subsection*{Hiperparámetros y configuración}
+\addcontentsline{toc}{subsection}{Hiperparámetros y configuración}
+
+\begin{description}
+  \item[\texttt{bond\_dim}] Dimensión de enlace: dimensión común de los índices virtuales y del vector raíz de la TTN. Principal parámetro que controla la capacidad del modelo.
+  \item[\texttt{local\_dim}] Dimensión local: tamaño del vector asociado a cada posición de entrada de la red tensorial, es decir, la dimensión de los índices físicos en el primer nivel.
+  \item[\texttt{patch\_size}] En el \texttt{AIMPatchEmbedding} no representa el tamaño de un cuadrado, sino el factor total de reducción espacial del \textit{stem}. Debe ser potencia de dos, y el número de bloques del \textit{stem} es $\log_2(\texttt{patch\_size})$.
+  \item[\texttt{aim\_channels}] Número de canales que mantiene el mapa espacial dentro del \textit{stem} y de los bloques AIM antes de proyectarse a \texttt{local\_dim}.
+  \item[\texttt{expansion\_ratio}] Factor por el que cada rama del bloque \texttt{AIM2D} expande el número de canales internamente, aumentando su capacidad de representación antes de comprimir de nuevo.
+  \item[\texttt{num\_aim\_blocks}] Número de bloques \texttt{AIM2D} que se aplican consecutivamente sobre el mapa producido por el \textit{stem}.
+  \item[\textbf{Factor de escala residual}] Parámetro entrenable (inicializado a un valor pequeño, $0{,}1$) que pondera la corrección que el bloque \texttt{AIM2D} suma a su entrada. Su inicialización pequeña hace que el bloque parta de un comportamiento próximo a la identidad.
+  \item[\textbf{Archivo de configuración (YAML)}] Fichero que define por completo un experimento (dataset, tamaño de imagen, tipo de \textit{embedding}, \texttt{local\_dim}, \texttt{bond\_dim}, número de épocas, ritmo de aprendizaje, regularización, \textit{scheduler} y semilla, entre otros), lo que permite reproducir o comparar experimentos sin depender de notas externas.
+\end{description}
+
+\subsection*{Entrenamiento, regularización y evaluación}
+\addcontentsline{toc}{subsection}{Entrenamiento, regularización y evaluación}
+
+\begin{description}
+  \item[\textbf{\textit{Pipeline}}] Estructura común del proyecto: \texttt{datos $\to$ transformaciones $\to$ DataLoader $\to$ modelo $\to$ pérdida $\to$ optimizador}. Separa responsabilidades entre la carga de datos, el modelo y el bucle de entrenamiento.
+  \item[\textbf{\textit{DataLoader}}] Componente de PyTorch que agrupa las muestras del conjunto de datos en lotes (\textit{batches}) para procesarlas de forma eficiente.
+  \item[\textbf{\textit{Batch} (lote)}] Conjunto de imágenes que se procesan a la vez; primera dimensión (\texttt{B}) de los tensores del modelo.
+  \item[\textbf{Recorte (\textit{crop})}] Región de una imagen que contiene un único objeto, generada a partir de una anotación YOLO. El problema se reformuló como clasificación por instancia de estos recortes.
+  \item[\textbf{\textit{Data augmentation} (aumento de datos)}] Conjunto de transformaciones aleatorias aplicadas solo en entrenamiento para que el modelo no memorice una única apariencia de cada objeto. Configurable mediante \texttt{augmentation\_name} (\texttt{none}, \texttt{basic}, \texttt{light}); la configuración final \texttt{light} añade rotaciones de 7 grados y \texttt{RandomErasing} con probabilidad 0{,}10.
+  \item[\texttt{RandomErasing}] Transformación de aumento de datos que borra aleatoriamente una región de la imagen durante el entrenamiento.
+  \item[\textbf{\textit{Backpropagation} (retropropagación)}] Algoritmo que calcula los gradientes de la función de coste respecto a los parámetros aplicando la regla de la cadena, propagando el error desde la salida hacia las capas inferiores.
+  \item[\textbf{\textit{LayerNorm}}] Normalización por capas: reescala cada vector de canales para estabilizar su escala y distribución. Se emplea en el bloque \texttt{AIM2D} y en las transformaciones entre niveles de la TTN.
+  \item[\textbf{\textit{Softmax}}] Función que normaliza las puntuaciones (\textit{logits}) en una distribución de probabilidad. La calcula internamente \texttt{CrossEntropyLoss}, por lo que el modelo no la aplica en su capa de salida.
+  \item[\texttt{CrossEntropyLoss}] Función de pérdida de entropía cruzada de PyTorch, empleada para el entrenamiento. Combina internamente la normalización \textit{softmax} y la comparación con la etiqueta correcta.
+  \item[\textbf{\textit{Label smoothing} (suavizado de etiquetas)}] Técnica de regularización que relaja el objetivo, repartiendo una pequeña parte de la probabilidad entre las clases incorrectas para evitar un exceso de confianza. Se aplica solo en entrenamiento.
+  \item[\textbf{\textit{Weight decay}}] Penalización que empuja suavemente los pesos hacia valores pequeños; la incorpora el optimizador AdamW. El proyecto añade además una penalización L2 explícita y configurable sobre las matrices de pesos.
+  \item[\textbf{\textit{Warmup} (calentamiento)}] Mecanismo que, durante las primeras épocas, hace crecer gradualmente el ritmo de aprendizaje hasta su valor objetivo, evitando oscilaciones al inicio del entrenamiento.
+  \item[\texttt{ReduceLROnPlateau}] Planificador (\textit{scheduler}) que reduce automáticamente el ritmo de aprendizaje cuando la pérdida de validación deja de mejorar durante varias épocas. El proyecto contempla también un descenso continuo tipo \textit{cosine decay}.
+  \item[\textbf{\textit{Checkpoint} (punto de control)}] Guardado del mejor modelo junto con el estado del optimizador y del planificador, que permite reanudar un entrenamiento interrumpido exactamente en las mismas condiciones.
+  \item[\textbf{\textit{Early stopping} (parada temprana)}] Criterio que detiene el entrenamiento cuando la pérdida de validación deja de mejorar durante un número fijo de épocas. Se empleó en los experimentos de referencia con ResNet50.
+  \item[\textbf{Ajuste fino (\textit{fine-tuning})}] Esquema en el que el modelo parte de pesos preentrenados sobre ImageNet y todos ellos se actualizan durante el entrenamiento, adaptando las características visuales generales al problema concreto.
+  \item[\texttt{train\_loss} / \texttt{eval\_loss}] Pérdida (entropía cruzada) medida sobre el conjunto de entrenamiento y sobre el de validación, respectivamente. Ambas miden lo mismo y son directamente comparables, ya que \texttt{train\_loss} no incluye el término de regularización.
+  \item[\textbf{\textit{Accuracy} top-1 / top-5}] Fracción de recortes en los que la clase real coincide con la más probable (top-1) o está entre las cinco más probables (top-5) para el modelo.
+  \item[\textbf{Precisión y exhaustividad (\textit{precision} / \textit{recall})}] La precisión de una clase mide qué fracción de los recortes asignados a ella le pertenece realmente (penaliza falsos positivos); la exhaustividad mide qué fracción de los recortes que le pertenecen consigue recuperar (penaliza los que se escapan).
+  \item[\textbf{Media macro}] Promedio simple de una métrica (precisión, exhaustividad o F1) sobre las 25 clases, dando el mismo peso a cada una con independencia de su número de recortes.
+  \item[\textbf{Matriz de confusión}] Diagnóstico cuyas filas representan la clase real y sus columnas la clase predicha; la diagonal recoge los aciertos y los valores fuera de ella, las confusiones entre clases.
+\end{description}

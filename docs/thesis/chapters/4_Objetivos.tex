@@ -1,35 +1,29 @@
 \chapter{OBJETIVOS}\label{sec:Objetivos}
 
 \section{Objetivos generales}
-El objetivo general del trabajo consiste en estudiar la aplicación de las Tensor Networks como una alternativa dentro del \textit{deep learning} para tareas de clasificación de imágenes, evaluando su viabilidad práctica mediante la implementación, entrenamiento y análisis experimental de modelos tensoriales.
+El objetivo general de este Trabajo de Fin de Grado es estudiar la aplicación de las \textit{Tensor Networks} como una alternativa dentro de modelos de \textit{deep learning} para clasificación de imágenes. En particular, se busca diseñar, implementar y evaluar una arquitectura basada en redes tensoriales aplicada a un problema realista de clasificación de imágenes de material de laboratorio.
 
-Para ello, el proyecto contempla el estudio del estado del arte en modelos de inteligencia artificial basados en Tensor Networks, el desarrollo de un pipeline de clasificación de imágenes, la implementación de arquitecturas tensoriales entrenables y la evaluación de su comportamiento sobre conjuntos de datos adecuados. El propósito no es demostrar que estos modelos sustituyan de forma general a las arquitecturas convencionales de clasificación de imágenes, sino analizar hasta qué punto pueden utilizarse en un problema realista de clasificación y qué limitaciones aparecen durante su desarrollo.
+El propósito del trabajo no es demostrar que las redes tensoriales sustituyan de forma general a las arquitecturas convencionales de visión artificial. Más bien se trata de analizar hasta qué punto pueden utilizarse en este tipo de tareas, qué decisiones de diseño resultan más importantes y qué limitaciones aparecen durante su implementación y entrenamiento. Por ello, el modelo se compara con una arquitectura estándar de referencia, ResNet50, con el fin de contextualizar su rendimiento dentro de un marco experimental más amplio.
 
-De forma complementaria, el proyecto persigue adquirir experiencia práctica en el uso de herramientas computacionales propias del ámbito de la investigación en inteligencia artificial, incluyendo el manejo de entornos de entrenamiento, el uso de librerías como PyTorch y TensorKrowch, la ejecución de experimentos en recursos de computación de altas prestaciones y la documentación reproducible del código científico.
+De forma complementaria, el proyecto persigue adquirir experiencia práctica en el uso de herramientas computacionales propias del ámbito de la investigación en inteligencia artificial. Incluyendo el manejo de entornos de entrenamiento, el uso de librerías como PyTorch y TensorKrowch, la ejecución de experimentos en recursos de computación de altas prestaciones y la documentación reproducible del código científico.
 
 \section{Objetivos específicos}
 
 \begin{enumerate}
 
-	\item Realizar una revisión del estado del arte de los modelos de inteligencia artificial basados en Tensor Networks aplicados a la clasificación de imágenes, analizando las arquitecturas más relevantes y sus principales características.
+	\item Estudiar los fundamentos de las \textit{Tensor Networks} y su posible aplicación como modelos entrenables en problemas de \textit{machine learning}, prestando especial atención a arquitecturas como las Matrix Product States y las Tree Tensor Networks.
 
-	\item Estudiar los fundamentos teóricos y prácticos de las Tensor Networks, con especial atención a su representación como modelos entrenables y a su integración en tareas de \textit{machine learning}.
+    \item Revisar trabajos previos en los que se hayan aplicado redes tensoriales a tareas de aprendizaje automático y clasificación de imágenes, identificando sus motivaciones, ventajas potenciales y principales limitaciones.
 
-	\item Diseñar un \textit{pipeline} computacional para clasificación de imágenes, que permita organizar de forma clara la carga de datos, las transformaciones, el modelo, el entrenamiento, la evaluación y el registro de resultados.
+    \item Diseñar un \textit{pipeline} computacional para clasificación de imágenes que integre de forma ordenada la carga de datos, el preprocesamiento, la definición del modelo, el entrenamiento, la evaluación y el registro de resultados.
 
-	\item Implementar modelos o variantes de modelos basados en Tensor Networks para tareas de clasificación de imágenes, utilizando herramientas compatibles con entrenamiento mediante diferenciación automática.
+    \item Diseñar e implementar una arquitectura basada en redes tensoriales.
 
-	\item Entrenar y evaluar los modelos desarrollados utilizando recursos computacionales adecuados, familiarizándose con el uso de servidores, entornos de ejecución, dependencias y herramientas básicas de gestión de experimentos.
+    \item Entrenar y evaluar los modelos desarrollados utilizando recursos computacionales adecuados, documentando las configuraciones empleadas y los resultados obtenidos de forma reproducible.
 
-	\item Comparar distintas configuraciones del modelo y del proceso de entrenamiento, analizando cómo afectan decisiones como la representación de la imagen, la dimensión interna del modelo, la regularización o el aumento de datos.
+    \item Comparar la arquitectura tensorial propuesta con una arquitectura convolucional de referencia, ResNet50, considerando distintos esquemas de entrenamiento (entrenamiento desde cero y ajuste fino de pesos preentrenados).
 
-	\item Analizar los resultados obtenidos mediante métricas de clasificación, curvas de entrenamiento y diagnósticos que permitan interpretar el comportamiento del aprendizaje y los principales patrones de error.
-
-	\item Identificar las principales ventajas y limitaciones de los enfoques tensoriales estudiados en el contexto de la clasificación de imágenes.
-
-	\item Documentar el desarrollo del proyecto, describiendo de forma clara los modelos estudiados, las implementaciones realizadas, los experimentos ejecutados y los resultados obtenidos.
-
-	\item Preparar y organizar un repositorio de código que recoja las implementaciones y experimentos realizados, favoreciendo su claridad, reproducibilidad y mantenimiento.
+    \item Evaluar los modelos mediante métricas de clasificación adecuadas, como la precisión global, la precisión top-5, el F1 macro, las curvas de entrenamiento y el análisis de errores por clase.
 	
 \end{enumerate}
 
@@ -37,7 +31,7 @@ De forma complementaria, el proyecto persigue adquirir experiencia práctica en 
 
 \begin{itemize}
 
-	\item Estudiar modelos de inteligencia artificial no relacionados con Tensor Networks o no orientados a tareas de clasificación de imágenes.
+    \item Realizar una comparación exhaustiva con todas las arquitecturas modernas de visión artificial. El trabajo incluye una comparación de referencia con ResNet50, pero no pretende cubrir de forma sistemática modelos como \textit{Vision Transformers}, \textit{EfficientNet} u otras arquitecturas avanzadas.
 
 	\item Resolver otros problemas del campo de la inteligencia artificial, como detección de objetos, segmentación semántica o generación de imágenes.
 
@@ -53,6 +47,6 @@ De forma complementaria, el proyecto persigue adquirir experiencia práctica en 
 
 Este proyecto contribuye a ampliar el conocimiento sobre las Tensor Networks como herramienta de aprendizaje automático. Aunque el fundamento teórico de estas arquitecturas está bien establecido en el ámbito de la física cuántica y el álgebra multilineal, su comportamiento práctico en tareas de clasificación de imágenes sigue siendo un área activa de investigación. El trabajo permite analizar qué dificultades aparecen al trasladar estas ideas a un pipeline real de \textit{deep learning}.
 
-Desde el punto de vista computacional, el proyecto permite explorar modelos estructurados en los que la capacidad se controla mediante decisiones como la topología de la red, la dimensión de enlace o la representación de entrada. Esto ofrece una perspectiva complementaria a la de las \textit{deep learning} convencionales, centrada en introducir sesgos estructurales y operaciones tensoriales en el proceso de aprendizaje.
+Desde el punto de vista computacional, el proyecto permite explorar modelos estructurados en los que la capacidad se controla mediante decisiones como la topología de la red, la dimensión de enlace o la representación de entrada. Esto ofrece una perspectiva complementaria a la del \textit{deep learning} convencional, centrada en introducir sesgos estructurales y operaciones tensoriales en el proceso de aprendizaje.
 
 La realización de este proyecto supone también una experiencia práctica en investigación aplicada. Comprende la revisión crítica de literatura científica, el diseño e implementación de experimentos reproducibles, el uso de infraestructuras de entrenamiento y el aprendizaje de herramientas y flujos de trabajo propios del ámbito profesional de la inteligencia artificial. Estos conocimientos son transferibles a entornos académicos y laborales relacionados con la física, la computación científica y el aprendizaje automático.

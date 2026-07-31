@@ -1,535 +1,20 @@
 \chapter{RESULTADOS}\label{sec:Resultados}
 
-En este capítulo se exponen los resultados que se han ido obteniendo a lo largo del proyecto. La idea es ir reconstruyendo el camino experimental que llevó a obtener los resultados finales. Se explicará qué ideas se probaron primero, qué problemas surgieron, qué hipótesis aparecieron a partir de los datos y qué cambios fueron mejorando el modelo.
+En este capítulo se presentan los resultados obtenidos con el modelo tensorial desarrollado en el trabajo y se comparan con los de ResNet50, una arquitectura de red neuronal muy utilizada como referencia en tareas de clasificación de imágenes. El objetivo de esta comparación es situar el rendimiento del modelo tensorial dentro de un marco reconocible y comprobar hasta qué punto una arquitectura basada en \textit{tensor networks} puede resolver de forma competitiva un problema real de clasificación.
 
-Hay una aclaración importante antes de empezar. El paper de ChemEq25 compara modelos de detección como \textit{YOLOv11} o \textit{RF-DETR} \citebox{hossain2025chemistrylabdataset}. En este TFG el planteamiento final no es detección, sino clasificación de crops generados a partir de las anotaciones YOLO. Por tanto, las métricas como \textit{accuracy}, F1 o \texttt{classification\_mAP} sirven para evaluar nuestro clasificador, pero no son directamente equivalentes al \textit{mAP@50} de un detector. Aun así, sí permiten demostrar que un modelo de \textit{deep learning} basado en TN puede funcionar de forma competitiva en un problema de clasificación de imágenes.
+Antes de analizar las cifras, conviene precisar qué se está evaluando. El conjunto ChemEq25 fue publicado originalmente para estudiar un problema de detección de materiales de laboratorio dentro de imágenes completas. En ese tipo de tarea, el modelo no solo debe decir qué objeto aparece, sino también localizar en qué zona de la imagen se encuentra. Por eso, los trabajos de detección suelen usar métricas que combinan la calidad de la localización y la calidad de la clasificación.
 
-\section{Primeros experimentos con Flowers102}
+En este TFG se trabaja con una versión reformulada del problema. A partir de las anotaciones originales se generan recortes, cada uno de los cuales contiene un único objeto de laboratorio. Por tanto, el modelo ya no tiene que encontrar dónde está el objeto dentro de la imagen completa, sino únicamente decidir a cuál de las 25 clases pertenece el recorte. Dicho de otra forma, se evalúa un problema de clasificación de imágenes, no un problema completo de detección de objetos.
 
-Flowers102 fue el dataset de prueba inicial. No era el objetivo final del TFG, pero sirvió para comprobar que el pipeline entrenaba, que las métricas se guardaban bien y que la red tensorial recibía gradientes. Además, al tener 102 clases, era un buen primer dataset de prueba para detectar si el modelo estaba aprendiendo algo o si se quedaba cerca del azar.
+Esta distinción es importante para interpretar correctamente los resultados. Las métricas utilizadas en este capítulo, como \textit{accuracy}, top-5, precisión, exhaustividad (\textit{recall}) y F1, miden la calidad del clasificador sobre recortes individuales. Por ello, no son directamente comparables con las métricas de detección del artículo original de ChemEq25, como el \textit{mAP@50}, que también tiene en cuenta si el objeto se ha localizado bien en la imagen \citebox{hossain2025chemistrylabdataset}. Sin embargo, sí permiten comparar de forma justa el modelo tensorial propuesto con ResNet50, ya que ambos se entrenan y se evalúan sobre los mismos recortes, las mismas particiones de datos y las mismas 25 clases.
 
-\subsection{Modelo original CustomTTN}
+\section{Mejor modelo tensorial obtenido}
 
-Con el modelo original \texttt{CustomTTN} se hicieron los primeros experimentos. Los resultados fueron los siguientes:
+El mejor resultado obtenido corresponde a una arquitectura formada por tres partes: una etapa inicial de representación de la imagen, implementada mediante \texttt{AIMPatchEmbedding}; una red tensorial jerárquica, implementada como \texttt{HybridCustomTTN}; y una cabeza final de clasificación lineal. Esta combinación es la configuración final del modelo tensorial propuesto en el TFG.
 
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.55\linewidth]{figures/Experiments_logs/loss_curve_04-21.png}
-    \caption{Curvas de pérdida del primer experimento con \texttt{CustomTTN} sobre Flowers102.}
-    \label{fig:loss_curve_04-20}
-\end{figure}
+Cada recorte de entrada se redimensiona a $224\times224$ píxeles y se transforma en una representación discreta de $14\times14$ posiciones de entrada. Por tanto, cada imagen queda descrita por una secuencia de 196 vectores, que es la entrada que recibe la red tensorial. En esta configuración se fijaron \texttt{local\_dim} = 12 y \texttt{bond\_dim} = 12. La primera magnitud corresponde a la dimensión de cada vector local producido por el \textit{embedding}, mientras que la segunda controla la dimensión interna de los enlaces de la red tensorial.
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Experimento} & \textbf{Mejor acc. eval} & \textbf{Época} & \textbf{Mejor eval loss} & \textbf{Eval loss final} \\
-\midrule
-\texttt{1} & 3,58\% & 9 & 4,5153 & 4,5156 \\
-\bottomrule
-\end{tabular}
-\caption{Resumen representativo del primer experimento con \texttt{CustomTTN}.}
-\label{tab:customttn_inicial}
-\end{table}
-
-En este momento se estaba usando Flowers102. Si calculamos $\ln(102)$ se obtiene aproximadamente $4,625$, que está muy cerca de la pérdida que aparece en la gráfica. Esto significa que el modelo estaba muy próximo a un comportamiento aleatorio. La \textit{train loss} bajaba muy poco y la precisión de evaluación se quedaba alrededor del 3,6\%. Por tanto, aunque el código ya funcionaba, el modelo todavía no estaba aprendiendo una representación útil.
-
-\subsection{Hipótesis 1}
-
-A raíz de estos resultados se elaboró la primera hipótesis. El modelo no aprendía bien porque entre las contracciones tensoriales no había funciones no lineales como ReLU, sigmoide o SeLU. Esta hipótesis tenía sentido porque, como se vio en el marco teórico, las redes neuronales profundas no se basan solo en aplicar transformaciones lineales, sino en intercalar activaciones no lineales que aumentan su capacidad expresiva.
-
-La idea inicial fue aplicar estas funciones en cada salida resultante de la contracción de cada bloque MPS. Sin embargo, esto no era tan directo en TensorKrowch, porque los nodos resultantes de una contracción no se pueden modificar como si fueran tensores PyTorch normales. Por eso fue necesario cambiar la estructura del modelo y dividir la TTN en niveles independientes.
-
-\subsection{Modelo HybridCustomTTN}
-
-Después de aplicar el cambio de la hipótesis 1, se lanzó un nuevo experimento. El modelo ya no era una TTN monolítica, sino una arquitectura híbrida; cada nivel contraía bloques MPS-3 con TensorKrowch y entre niveles se aplicaban transformaciones PyTorch del tipo \texttt{LayerNorm -> Linear -> ReLU}.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.55\linewidth]{figures/Experiments_logs/loss_curve_04-22.png}
-    \caption{Primer experimento con la arquitectura híbrida. La pérdida ya no queda tan cerca del comportamiento aleatorio inicial.}
-    \label{fig:loss_curve_04-22}
-\end{figure}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Experimento} & \textbf{Mejor acc. eval} & \textbf{Época} & \textbf{Mejor eval loss} & \textbf{Eval loss final} \\
-\midrule
-\texttt{2} & 13,60\% & 47 & 3,5593 & 5,1254 \\
-\bottomrule
-\end{tabular}
-\caption{Resumen del primer experimento relevante con \texttt{HybridCustomTTN}.}
-\label{tab:hybridttn_inicial}
-\end{table}
-
-Este resultado confirmó la hipótesis 1, ya que el modelo dejó de tener un comportamiento prácticamente aleatorio. La precisión subió de 3,58\% a 13,60\%, y la mejor \textit{eval loss} bajó de 4,5153 a 3,5593. La mejora era clara, pero también apareció una señal nueva; al avanzar el entrenamiento, la pérdida de evaluación volvía a empeorar.
-
-Para entender mejor esta tendencia se repitió el experimento durante más épocas:
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.55\linewidth]{figures/Experiments_logs/loss_curve_04-27.png}
-    \caption{Experimento largo con \texttt{HybridCustomTTN} sobre Flowers102.}
-    \label{fig:loss_curve_04-27}
-\end{figure}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Experimento} & \textbf{Acc. eval} & \textbf{Época} & \textbf{Train loss} & \textbf{Eval loss} & \textbf{Acc. final} \\
-\midrule
-\texttt{3} & 12,46\% & 54 & 1,3295 & 8,2368 & 8,55\% \\
-\bottomrule
-\end{tabular}
-\caption{Resumen del experimento largo con \texttt{HybridCustomTTN}.}
-\label{tab:hybridttn_largo}
-\end{table}
-
-Aquí ya se ve mucho mejor el problema. La \textit{train loss} baja de forma sostenida hasta 1,3295, así que el modelo sí aprende el conjunto de entrenamiento. Sin embargo, la \textit{eval loss} sube hasta 8,2368 y la precisión final cae al 8,55\%. Esto es una señal clara de \textit{overfitting}, el modelo se adapta al entrenamiento, pero no generaliza bien a imágenes nuevas.
-
-\subsection{Hipótesis 2}
-
-La segunda hipótesis fue que el modelo estaba perdiendo demasiada información espacial de la imagen. Hasta ese momento se usaba \texttt{PatchEmbedding}. Para imágenes de $224\times224$ y \texttt{patch\_size=16}, la imagen se divide en una rejilla de $14\times14$, es decir, 196 posiciones. Cada \textit{patch} se proyecta a una dimensión \texttt{local\_dim} y se entrega a la TTN:
-
-\begin{center}
-\texttt{[B, 3, 224, 224] -> [B, 196, local\_dim]}.
-\end{center}
-
-El problema es que, en las primeras pruebas, \texttt{local\_dim} era muy pequeña. Se estaba comprimiendo cada \textit{patch} de la imagen a muy pocos números antes de que el modelo pudiera procesar bien la localidad espacial. El zigzag ayudaba a ordenar la secuencia, pero no recuperaba la estructura 2D original. Por eso el siguiente cambio fue introducir un \textit{embedding} que procesara la imagen como mapa bidimensional antes de aplanarla.
-
-\section{Cambio del embedding a AIM}
-
-El cambio a \texttt{AIMPatchEmbedding} nace de la hipótesis 2. El objetivo era conservar más información espacial antes de entregar la imagen a la TTN. Para ello se incorporó un \textit{front-end} inspirado en los bloques AIM de \textit{Deep Tree Tensor Networks for Image Recognition} \citebox{nie2025deeptreetensornetworks}.
-
-\begin{center}
-\texttt{imagen -> stem CNN -> AIM2D -> Conv2d 1x1 -> flatten + zigzag -> HybridCustomTTN}
-\end{center}
-
-El bloque AIM2D combina dos ramas lineales mediante producto elemento a elemento. Si ambas ramas son lineales en la entrada, su producto introduce interacciones bilineales. Esta idea encaja muy bien con las redes tensoriales, porque introduce interacciones multiplicativas estructuradas antes de pasar a la TTN.
-
-En términos de dimensiones, con imágenes de $224\times224$ y \texttt{patch\_size=16}, el front-end reduce la imagen a una rejilla $14\times14$. Después, una convolución $1\times1$ proyecta los canales a \texttt{local\_dim}, y finalmente la rejilla se aplana:
-
-\begin{center}
-\texttt{[B, 3, 224, 224] -> [B, local\_dim, 14, 14] -> [B, 196, local\_dim]}.
-\end{center}
-
-El primer experimento con AIM durante 50 épocas fue:
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.55\linewidth]{figures/Experiments_logs/loss_curve_04-28-50.png}
-    \caption{Experimento con \texttt{AIMPatchEmbedding} durante 50 épocas.}
-    \label{fig:loss_curve_04-28-50}
-\end{figure}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Experimento} & \textbf{Épocas} & \textbf{Mejor acc. eval} & \textbf{Mejor eval loss} & \textbf{Acc. final} \\
-\midrule
-\texttt{4} & 50 & 14,01\% & 3,5859 & 14,01\% \\
-\bottomrule
-\end{tabular}
-\caption{Primer resultado con \texttt{AIMPatchEmbedding}.}
-\label{tab:aim_50}
-\end{table}
-
-El resultado fue positivo porque la pérdida seguía bajando y no se observaba una separación tan violenta entre entrenamiento y evaluación. Para compararlo mejor con los experimentos anteriores, se repitió con 100 épocas:
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.55\linewidth]{figures/Experiments_logs/loss_curve_04-28-100.png}
-    \caption{Experimento con \texttt{AIMPatchEmbedding} durante 100 épocas.}
-    \label{fig:loss_curve_04-28-100}
-\end{figure}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Experimento} & \textbf{Épocas} & \textbf{Mejor acc. eval} & \textbf{Mejor eval loss} & \textbf{Eval loss final} \\
-\midrule
-\texttt{5} & 100 & 15,88\% & 3,4330 & 3,5312 \\
-\bottomrule
-\end{tabular}
-\caption{Resultado con AIM durante 100 épocas.}
-\label{tab:aim_100}
-\end{table}
-
-Comparado con \figref{fig:loss_curve_04-27}, el \textit{overfitting} ya no era tan agresivo. Antes la \textit{eval loss} acababa en 8,2368, mientras que con AIM se mantuvo alrededor de 3,5312. La precisión seguía siendo baja, pero el comportamiento del entrenamiento era más sano. Esto indicaba que AIM no era una solución mágica, pero sí estaba atacando el problema correcto.
-
-El siguiente paso fue aplicar \textit{data augmentation}. Esta técnica consiste en generar variaciones de las imágenes durante el entrenamiento, por ejemplo con cambios de recorte, color, orientación o borrado parcial. La idea es que el modelo no memorice una única versión de cada imagen, sino que aprenda rasgos más generales.
-
-\begin{figure}[H]
-    \centering
-
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_04-30-0011.png}
-        \caption{}
-        \label{fig:loss_curve_04-30-0011}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_04-30-0021.png}
-        \caption{}
-        \label{fig:loss_curve_04-30-0021}
-    \end{subfigure}
-
-    \caption{Experimentos en Flowers102 con AIM y \textit{data augmentation}.}
-    \label{fig:loss_curve_04-30-0011-0021}
-\end{figure}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lcccc}
-\toprule
-\textbf{Experimento} & \textbf{Mejor acc. eval} & \textbf{Top-5 eval} & \textbf{Mejor eval loss} & \textbf{Acc. final} \\
-\midrule
-\texttt{6} & 30,13\% & 61,40\% & 2,7612 & 29,97\% \\
-\texttt{7} & 33,96\% & 66,04\% & 2,5600 & 33,96\% \\
-\bottomrule
-\end{tabular}
-\caption{Mejores resultados sobre Flowers102 después de añadir AIM y \textit{data augmentation}.}
-\label{tab:flowers_aim_aug}
-\end{table}
-
-Aquí el cambio ya fue bastante más claro. La precisión subió hasta 33,96\% y el top-5 alcanzó 66,04\%. Aun así, la matriz de confusión mostraba que el modelo seguía confundiendo muchas clases.
-
-\begin{figure}[H]
-    \centering
-
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/confusion_matrix_04-30-0011.png}
-        \caption{}
-        \label{fig:confusion_matrix_04-30-0011}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/confusion_matrix_04-30-0021.png}
-        \caption{}
-        \label{fig:confusion_matrix_04-30-0021}
-    \end{subfigure}
-
-    \caption{Matrices de confusión multiclase en Flowers102 tras AIM y \textit{data augmentation}.}
-    \label{fig:confusion_matrix_04-30-0011-0021}
-\end{figure}
-
-En una matriz de confusión ideal se vería casi todo concentrado en la diagonal. En este caso la diagonal ya aparece, lo cual significa que el modelo no está prediciendo completamente al azar, pero sigue habiendo muchos valores fuera de ella. Esto llevó a la tercera hipótesis.
-
-\subsection{Hipótesis 3}
-
-La tercera hipótesis fue que el problema ya no era solo que el modelo no aprendiera, sino que Flowers102 era un dataset difícil para esta fase del proyecto. Tiene 102 clases de flores, muchas de ellas visualmente muy parecidas. Incluso para una persona puede ser complicado distinguir correctamente todas las clases sin un conocimiento previo sobre botánica.
-
-Además, Flowers102 nunca fue el objetivo central del TFG. El objetivo era trabajar con imágenes de material de laboratorio, usando ChemEq25. Por tanto, una vez comprobado que el pipeline funcionaba y que AIM mejoraba el comportamiento, el siguiente paso natural fue cambiar al dataset principal.
-
-\section{Cambio de dataset a ChemEq25}
-
-Antes de implementar cualquier dataset en un modelo, es muy importante revisarlo detenidamente. La parte de limpiar y adaptar los datos es una de las más importantes dentro del \textit{machine learning}, porque si los datos no están bien preparados, es muy difícil obtener buenos resultados después.
-
-Revisando ChemEq25 apareció una particularidad importante. Muchas imágenes tenían dimensiones de $640\times640$ píxeles, pero podían contener más de un objeto de laboratorio. Incluso había fotografías con muchos objetos distintos en la misma escena. Si se introdujera una imagen completa en el clasificador, el modelo no sabría qué objeto debe clasificar. Por eso fue necesario usar las anotaciones YOLO del dataset.
-
-Las anotaciones YOLO indican dónde está cada objeto dentro de la imagen. Con ellas se generaron recortes que contienen un único objeto, y cada recorte mantiene su etiqueta correspondiente.
-
-\begin{figure}[H]
-    \centering
-
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/tfg_dataset_yolo_boxes_square.png}
-        \caption{}
-        \label{fig:YOLO}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/tfg_dataset_classifier_crops_square.png}
-        \caption{}
-        \label{fig:crops}
-    \end{subfigure}
-
-    \caption{En la figura a) vemos ejemplos de cajas obtenidas a partir de las anotaciones YOLO. En la figura b) vemos ejemplos de los recortes utilizados como entrada del clasificador. El color gris que se ven entre las imágenes es el color de relleno cercano a la media de \textit{ImageNet}. Las imágenes en b) son los recortes tal y como las va a ver el modelo.}
-    \label{fig:dataset_crops_YOLO}
-\end{figure}
-
-Una vez preparado el dataset, se lanzó el primer experimento serio con ChemEq25:
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.55\linewidth]{figures/Experiments_logs/loss_curve_05-05-0953.png}
-    \caption{Primer experimento con ChemEq25.}
-    \label{fig:loss_curve_05-05-0953}
-\end{figure}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Experimento} & \textbf{LR} & \textbf{Acc. eval} & \textbf{Top-5} & \textbf{Eval loss} & \textbf{Acc. final} \\
-\midrule
-\texttt{8} & 0,0005 & 57,00\% & 86,22\% & 1,4343 & 56,86\% \\
-\bottomrule
-\end{tabular}
-\caption{Primer resultado sobre ChemEq25.}
-\label{tab:chemeq_primer_run}
-\end{table}
-
-El salto respecto a Flowers102 fue muy grande. La precisión pasó de 33,96\% en Flowers a 57,00\% en ChemEq25, y el top-5 alcanzó 86,22\%. Esto confirmó la hipótesis 3. El problema de Flowers102 no era solo la arquitectura, sino también la dificultad de separar 102 clases de flores muy parecidas. Con 25 clases de material de laboratorio, el modelo empezó a mostrar mucha más capacidad.
-
-\subsection{Efecto del learning rate}
-
-El siguiente cambio fue reducir el \textit{learning rate} de 0,0005 a 0,00025. El \textit{learning rate} es el tamaño del paso que da el optimizador al actualizar los parámetros. Si es demasiado alto, el modelo puede moverse de forma brusca por el espacio de parámetros y no estabilizarse bien. Si es demasiado bajo, el entrenamiento puede avanzar muy lento.
-
-\begin{figure}[H]
-    \centering
-
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_05-05-1119.png}
-        \caption{}
-        \label{fig:loss_curve_05-05-1119}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_05-05-1145.png}
-        \caption{}
-        \label{fig:loss_curve_05-05-1145}
-    \end{subfigure}
-
-    \caption{Mismo experimento que \figref{fig:loss_curve_05-05-0953}, pero con \textit{learning rate} menor.}
-    \label{fig:loss_curve_05-05-1119-1145}
-\end{figure}
-
-\begin{table}[H]
-\centering
-\scriptsize
-\begin{tabular}{lcccccc}
-\toprule
-\textbf{Experimento} & \textbf{Cambio} & \textbf{Acc.} & \textbf{Top-5} & \textbf{Loss} & \textbf{Train final} & \textbf{Eval final} \\
-\midrule
-\texttt{8} & LR 0,0005 & 57,00\% & 86,22\% & 1,4343 & 64,80\% & 56,86\% \\
-\texttt{9} & LR 0,00025 & 75,23\% & 93,90\% & 1,0539 & 94,78\% & 74,66\% \\
-\texttt{10} & MLP head & 70,57\% & 94,33\% & 1,3047 & 80,34\% & 69,56\% \\
-\bottomrule
-\end{tabular}
-\caption{Comparación de los primeros ajustes sobre ChemEq25.}
-\label{tab:chemeq_lr_head}
-\end{table}
-
-La bajada del \textit{learning rate} produjo una mejora muy fuerte: de 57,00\% a 75,23\%. Esto no significa que el modelo empezara desde un punto distinto, porque la \textit{seed} era la misma. Lo que cambió fue la trayectoria de optimización. Con pasos más pequeños, el modelo encontró una zona mucho mejor.
-
-También se probó una cabeza MLP en vez de una cabeza lineal. La motivación era que el top-5 era alto, así que quizá la representación final contenía información suficiente, pero faltaba una separación más fina entre clases. Sin embargo, la MLP no mejoró el resultado, se quedó en 70,57\%. Por eso se mantuvo la cabeza lineal como opción principal.
-
-En el experiemento con \textit{learning rate} 0,00025 apareció otro patrón interesante. La mejor \textit{eval loss} se alcanzó en la época 66, pero la mejor precisión llegó en la época 104. Esto indica que el modelo acertaba más ejemplos, pero cuando fallaba podía hacerlo con más confianza. Esa lectura motivó los siguientes cambios, \textit{warmup}, regularización y \textit{label smoothing}.
-
-\section{Ajustes de entrenamiento y regularización}
-
-A partir de este punto hubo muchos experimentos. Por cada experimento que se hacía, se iban atacando los problemas observados. Optimización inestable, sobreconfianza, clases parecidas y sensibilidad a la seed.
-
-\begin{figure}[htbp]
-    \centering
-
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_05-07-0857.png}
-        \caption{}
-        \label{fig:loss_curve_05-07-0857}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_05-07-1304.png}
-        \caption{}
-        \label{fig:loss_curve_05-07-1304}
-    \end{subfigure}
-
-    \vspace{0.4cm}
-
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_05-08-1400.png}
-        \caption{}
-        \label{fig:loss_curve_05-08-1400}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_05-11-0958.png}
-        \caption{}
-        \label{fig:loss_curve_05-11-0958}
-    \end{subfigure}
-
-     \vspace{0.4cm}
-
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_05-11-1101.png}
-        \caption{}
-        \label{fig:loss_curve_05-11-1101}
-    \end{subfigure}
-
-    \caption{Distintos experimentos a los que se le fueron aplicando pequeñas mejoras detalladas en \tabref{tab:ajustes_entrenamiento}. Se puede ver como las curvas de perdida van mejorando con cada experimento.}
-    \label{fig:loss_curve-07-11}
-\end{figure}
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabularx}{\textwidth}{lXcccc}
-\toprule
-\textbf{Experimento} & \textbf{Cambio principal} & \textbf{Mejor acc.} & \textbf{Top-5} & \textbf{Mejor loss} & \textbf{Acc. final} \\
-\midrule
-\texttt{11} & Warmup con configuración 8/8 & 78,46\% & 94,62\% & 1,0915 & 78,03\% \\
-\texttt{12} & Subida a dimensión 12/12 & 81,55\% & 95,41\% & 0,8637 & 80,33\% \\
-\texttt{13} & Warmup coseno, preservación de aspecto y $L_2$ suave & 86,86\% & 97,77\% & 0,7065 & 86,43\% \\
-\texttt{14} & Label smoothing 0,05, seed 42 & 87,08\% & 96,77\% & 0,5221 & 86,93\% \\
-\texttt{15} & Repetición del experimento con label smoothing 0,05 & 88,94\% & 97,20\% & 0,4617 & 88,44\% \\
-\bottomrule
-\end{tabularx}
-\caption{Evolución de los ajustes de entrenamiento antes del último cambio de \textit{data augmentation}.}
-\label{tab:ajustes_entrenamiento}
-\end{table}
-
-El \textit{warmup} ayudó a que el entrenamiento no empezara de forma tan agresiva. Subir \texttt{local\_dim} y \texttt{bond\_dim} a 12 también mejoró bastante, porque la representación que entraba en la TTN y el vector interno de enlace tenían más capacidad.
-
-Después, la combinación de warmup coseno mas la preservación de relación de aspecto de las imágenes recortadas y la implementación de un término de regularización $L_2$, llevó el modelo hasta 86,86\% de precisión. En este punto el modelo ya funcionaba bien, pero seguía habiendo sobreconfianza en los errores. Por eso se incorporó \textit{label smoothing}. Con \texttt{label\_smoothing=0.05} no solo mejoró ligeramente la precisión, sino que bajó de forma clara la pérdida de evaluación y la confianza media cuando el modelo se equivocaba.
-
-\begin{figure}[htbp]
-    \centering
-    \captionsetup[subfigure]{skip=1pt}
-    \captionsetup[figure]{font=footnotesize, skip=3pt}
-    
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/confusion_matrix_05-07-0857.png}
-        \caption{}
-        \label{fig:confusion_matrix_05-07-0857}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/confusion_matrix_05-07-1304.png}
-        \caption{}
-        \label{fig:confusion_matrix_05-07-1304}
-    \end{subfigure}
-
-    \vspace{0.08cm}
-
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/confusion_matrix_05-08-1400.png}
-        \caption{}
-        \label{fig:confusion_matrix_05-08-1400}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/confusion_matrix_05-11-0958.png}
-        \caption{}
-        \label{fig:confusion_matrix_05-11-0958}
-    \end{subfigure}
-
-     \vspace{0.08cm}
-
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/confusion_matrix_05-11-1101.png}
-        \caption{}
-        \label{fig:confusion_matrix_05-11-1101}
-    \end{subfigure}
-    
-    \caption{Matrices de confusión de distintos experimentos a los que se le fueron aplicando pequeñas mejoras detalladas en \tabref{tab:ajustes_entrenamiento}. Se puede ver como la diagonal se hace más evidente a medida que se aplican los cambios.}
-    \label{fig:confusion_matrix-07-11}
-\end{figure}
-
-Las clases difíciles seguían siendo bastante coherentes entre experimentos, objetos alargados o muy parecidos entre sí, como \textit{Measuring Cylinder}, \textit{Volumetric Flask}, \textit{Separating Funnel}, \textit{Test Tube}, \textit{Pipette} y las distintas variantes de \textit{Round Bottom Flask}. Esto era una señal importante, los errores no eran aleatorios, sino que estaban concentrados en formas visualmente parecidas.
-
-\subsection{Hipótesis 4}
-
-La cuarta hipótesis fue que el modelo no necesitaba solo más capacidad, sino ver variaciones suaves de esos objetos durante el entrenamiento. Si el modelo confundía clases parecidas por pequeñas diferencias de forma, orientación o visibilidad, entonces una \textit{data augmentation} más adecuada podía ayudar a aprender representaciones más robustas.
-
-Por eso se introdujo una opción de aumento \texttt{light}, con rotaciones pequeñas y borrado aleatorio bajo. No se buscaba deformar agresivamente los objetos, porque en este dataset la geometría importa mucho. La idea era justamente la contraria, simular variaciones más ligeras sin destruir la clase.
-
-\section{Salto con data augmentation light}
-
-El cambio más importante de toda la fase final fue la nueva \textit{data augmentation} suave. Manteniendo la configuración fuerte anterior, se lanzaron cuatro experimentos con seeds distintas:
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Experimento} & \textbf{Seed} & \textbf{Mejor acc.} & \textbf{Top-5} & \textbf{Mejor loss} & \textbf{Macro F1} \\
-\midrule
-\texttt{16} & 55 & 94,54\% & 98,85\% & 0,2684 & 94,64\% \\
-\texttt{17} & 42 & 94,19\% & 99,21\% & 0,2503 & 94,26\% \\
-\texttt{18} & 69 & 96,05\% & 99,43\% & 0,1997 & 95,94\% \\
-\texttt{19} & 111 & 94,26\% & 98,71\% & 0,2634 & 94,28\% \\
-\midrule
-\textbf{Media} & -- & \textbf{94,76\%} & -- & -- & \textbf{94,78\%} \\
-\bottomrule
-\end{tabular}
-\caption{Resultados con \texttt{augmentation\_name = light}.}
-\label{tab:light_augmentation}
-\end{table}
-
-\begin{figure}[H]
-    \centering
-
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_05-14-1025.png}
-        \caption{}
-        \label{fig:loss_curve_05-14-1025}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_05-14-1026.png}
-        \caption{}
-        \label{fig:loss_curve_05-14-1026}
-    \end{subfigure}
-
-    \vspace{0.4cm}
-
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_05-14-1106.png}
-        \caption{}
-        \label{fig:loss_curve_05-14-1106}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/loss_curve_05-14-1107.png}
-        \caption{}
-        \label{fig:loss_curve_05-14-1107}
-    \end{subfigure}
-
-    \caption{Experimentos realizados con el cambio del \textit{data augmentation}}
-    \label{fig:loss_curve_05-14}
-\end{figure}
-
-Este fue el salto más grande del proyecto. Antes de esta modificación, el mejor resultado estaba alrededor de 88,94\%. Con \textit{data augmentation light}, los cuatro experimentos superaron el 94\%, y la mejor llegó a 96,05\%. Estos resultados confirman las hipótesis 4; la preparación de datos y la regularización visual fueron decisivas.
-
-\section{Mejor modelo obtenido}
-
-El experimento con mejores resultados es el número 18. La configuración principal fue la siguiente. \textit{Seed} 69, dimensión 12/12, embedding AIM, \texttt{HybridCustomTTN}, cabeza lineal, \textit{learning rate} 0,00025, warmup coseno de 5 épocas, label smoothing 0,05, regularización $L_2$ suave, preservación de relación de aspecto y aumento de datos \texttt{light}.
+El entrenamiento se realizó con entropía cruzada como función de pérdida y el optimizador \texttt{AdamW}. Además, se empleó un \textit{learning rate} inicial de 0,00025, una fase inicial de calentamiento (\textit{warmup}) de tipo coseno durante 5 épocas, suavizado de etiquetas (\textit{label smoothing}) de 0,05, regularización $L_2$ suave, \textit{weight decay} en el optimizador, preservación de la relación de aspecto de los recortes y aumento de datos suave. Las métricas principales obtenidas sobre el conjunto de evaluación se recogen en \tabref{tab:mejor_modelo}.
 
 \begin{table}[H]
 \centering
@@ -540,110 +25,162 @@ El experimento con mejores resultados es el número 18. La configuración princi
 \midrule
 Accuracy top-1 & 96,05\% \\
 Accuracy top-5 & 99,43\% \\
-Macro precision & 96,12\% \\
-Macro recall & 95,82\% \\
-Macro F1 & 95,94\% \\
-Weighted F1 & 96,05\% \\
+Precisión macro & 96,12\% \\
+Exhaustividad (\textit{recall}) macro & 95,82\% \\
+F1 macro & 95,94\% \\
+F1 ponderado & 96,05\% \\
 \texttt{classification\_mAP} & 98,41\% \\
-Eval loss final & 0,2037 \\
+\textit{Eval loss} final & 0,2037 \\
 \bottomrule
 \end{tabular}
-\caption{Métricas principales del mejor modelo sobre ChemEq25.}
+\caption{Métricas principales del mejor modelo tensorial sobre ChemEq25.}
 \label{tab:mejor_modelo}
 \end{table}
 
-\begin{figure}[htbp]
+El modelo alcanza una \textit{accuracy} top-1 del 96,05\%, lo que significa que clasifica correctamente algo más del 96\% de los recortes del conjunto de evaluación. Además, obtiene una \textit{accuracy} top-5 del 99,43\%, de modo que, incluso cuando la primera predicción no es correcta, la clase verdadera aparece casi siempre entre las cinco clases más probables. Este comportamiento es relevante porque indica que los errores no suelen corresponder a predicciones completamente alejadas de la clase real, sino a confusiones entre clases que el modelo considera cercanas.
+
+La precisión macro, la exhaustividad macro y el F1 macro se sitúan también en torno al 96\%. Estas métricas calculan primero el rendimiento clase a clase y después promedian los resultados, por lo que son útiles para comprobar que el buen rendimiento global no se debe únicamente a las clases más representadas. El F1 ponderado coincide prácticamente con la \textit{accuracy}, lo que sugiere que el comportamiento agregado del modelo es coherente con el rendimiento observado por clase.
+
+También se ha incluido el valor de \texttt{classification\_mAP}, que alcanza el 98,41\%. En este caso, la métrica se calcula como una media de precisión clase a clase a partir de las probabilidades de salida del clasificador. Para ello, cada clase se evalúa por separado frente al conjunto de las demás clases, y después se promedian los resultados. Por tanto, no debe confundirse con el \textit{mAP@50} utilizado en detección de objetos, ya que aquí no se evalúa la localización espacial del objeto. Su valor indica, no obstante, que el orden de probabilidades producido por el clasificador es muy bueno.
+
+Un aspecto importante de este resultado es el tamaño del modelo. En este contexto, se llama parámetro entrenable a cada número interno del modelo que se ajusta durante el entrenamiento. Por ejemplo, son parámetros los coeficientes de los filtros convolucionales, los pesos de las capas lineales y las entradas de los tensores que forman la red tensorial. No se cuentan como parámetros los datos de entrada, las clases del problema, las dimensiones elegidas como hiperparámetros ni los nodos de relleno fijos introducidos para completar la estructura de la TTN.
+
+El recuento se realizó sumando todos los parámetros entrenables de la arquitectura una vez construida con la configuración final. La arquitectura tensorial completa tiene aproximadamente 2,15 millones de parámetros entrenables. La mayor parte de ellos se concentra en los bloques MPS-3 que forman los distintos niveles de la \texttt{HybridCustomTTN}, con alrededor de 2,10 millones de parámetros. La etapa inicial \texttt{AIMPatchEmbedding} aporta aproximadamente 48\,000 parámetros, mientras que la cabeza lineal final contiene únicamente unos cientos. Este recuento será especialmente relevante en la comparación posterior con ResNet50, cuyo número de parámetros es considerablemente mayor.
+
+\section{Comportamiento del modelo tensorial}
+
+Además de las métricas finales, es importante analizar cómo se comporta el modelo durante el entrenamiento. Esto permite comprobar si el resultado obtenido es estable, si el modelo aprende de forma progresiva y si existe una separación excesiva entre el rendimiento sobre los datos de entrenamiento y el rendimiento sobre datos no vistos.
+
+En la \figref{fig:curvas_ttn} se muestra la evolución del entrenamiento del mejor modelo tensorial. La función de pérdida mide, de forma agregada, cuánto se equivoca el modelo al asignar probabilidades a las distintas clases. Por tanto, una disminución de esta magnitud indica que el modelo está ajustando mejor sus predicciones. La precisión, por otro lado, mide directamente el porcentaje de recortes clasificados correctamente.
+\begin{figure}[H]
     \centering
-
-    \begin{subfigure}{0.45\textwidth}
+    \begin{subfigure}[b]{0.47\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/confusion_matrix_05-14-1025.png}
-        \caption{}
-        \label{fig:confusion_matrix_05-14-1025}
+        \includegraphics[width=\textwidth]{figures/resultados/ttn_loss.png}
+        \caption{Evolución de la pérdida.}
+        \label{fig:ttn_loss}
     \end{subfigure}
     \hfill
-    \begin{subfigure}{0.45\textwidth}
+    \begin{subfigure}[b]{0.47\textwidth}
         \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/confusion_matrix_05-14-1026.png}
-        \caption{}
-        \label{fig:confusion_matrix_05-14-1026}
+        \includegraphics[width=\textwidth]{figures/resultados/ttn_accuracy.pdf}
+        \caption{Evolución de la precisión.}
+        \label{fig:ttn_accuracy}
     \end{subfigure}
-
-    \vspace{0.4cm}
-
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/confusion_matrix_05-14-1106.png}
-        \caption{}
-        \label{fig:confusion_matrix_05-14-1106}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{0.45\textwidth}
-        \centering
-        \includegraphics[width=\textwidth]{figures/Experiments_logs/confusion_matrix_05-14-1107.png}
-        \caption{}
-        \label{fig:confusion_matrix_05-14-1107}
-    \end{subfigure}
-
-    \caption{Matrices de confusión de los experimentos después de aplicar \textit{data augmentation}}
-    \label{fig:confusion_matrix-05-14}
+    \caption{Evolución del entrenamiento del mejor modelo tensorial. En (a) se representa la función de pérdida y en (b) la precisión, comparando el comportamiento sobre entrenamiento y evaluación.}
+    \label{fig:curvas_ttn}
 \end{figure}
 
-Las matrices de confusión $\bigr($\figref{fig:confusion_matrix-05-14}$\bigl)$ muestran una diagonal muy marcada. Esto significa que el modelo clasifica correctamente la gran mayoría de los recortes. Los errores que quedan se concentran en clases visualmente parecidas. En el mejor experimento, las clases con F1 más bajo siguieron siendo algunas de las más difíciles del dataset, especialmente las relacionadas con objetos alargados o con geometría muy parecida.
+La evolución observada muestra que el modelo aprende de forma progresiva durante el entrenamiento. La precisión sobre el conjunto de evaluación aumenta de manera sostenida hasta alcanzar un valor máximo del 96,05\%, mientras que la pérdida de evaluación desciende hasta un valor final de 0,2037. Esto indica que el modelo no solo mejora sobre los datos usados para ajustar sus parámetros, sino que también mantiene un buen rendimiento sobre ejemplos no utilizados directamente durante el entrenamiento.
 
-El top-5 de 99,43\% también es importante. Quiere decir que, cuando el modelo no acierta la primera predicción, casi siempre tiene la clase correcta entre las cinco más probables. Esto sugiere que la representación aprendida por AIM + TTN contiene mucha información útil, aunque todavía haya confusiones finas entre clases muy similares.
+La comparación entre entrenamiento y evaluación permite estudiar si el modelo está memorizando en exceso los datos de entrenamiento. En este caso, el comportamiento general no apunta a un sobreajuste severo, porque el rendimiento sobre el conjunto de evaluación se mantiene alto y no se observa una degradación clara al final del entrenamiento. Aun así, la diferencia entre el mejor resultado y otros entrenamientos equivalentes muestra que el modelo sí presenta cierta sensibilidad a la inicialización aleatoria de sus parámetros.
 
-La métrica \texttt{classification\_mAP} fue 98,41\%. Esta métrica se calculó como una media de precisión one-vs-rest sobre las probabilidades de clase. No debe confundirse con el \textit{mAP@50} de detección del paper de ChemEq25, porque aquí no se evalúan cajas ni IoU. Aun así, es una señal muy fuerte de que el ranking de probabilidades del clasificador es muy bueno.
+Para comprobar esta variabilidad, se repitió el entrenamiento manteniendo la misma configuración y cambiando únicamente la semilla aleatoria. Esta semilla controla aspectos como la inicialización inicial de los parámetros y el orden en el que se presentan los datos durante el entrenamiento. Los valores de \textit{accuracy} obtenidos fueron 94,54\%, 94,19\%, 96,05\% y 94,26\%, con una media de 94,76\%.
 
-\section{Variabilidad por seed y límite de las pruebas finales}
+Este resultado matiza la interpretación del mejor modelo. El valor de 96,05\% representa el mejor entrenamiento obtenido, pero el comportamiento más habitual de la arquitectura se sitúa en torno al 94--95\%. Por tanto, el modelo tensorial es capaz de alcanzar un rendimiento alto, aunque todavía muestra una dependencia apreciable de las condiciones iniciales del entrenamiento. Esta sensibilidad es una limitación relevante, especialmente si se compara con arquitecturas más consolidadas en visión artificial.
 
-Después de alcanzar el 96,05\%, se lanzó una \textit{seed sweep} con la misma configuración para comprobar la robustez del modelo.
+También resulta útil analizar qué tipo de errores comete el modelo. Para ello se estudió la matriz de confusión, que recoge cuántas veces cada clase real fue asignada a cada clase predicha. Esta representación permite distinguir entre errores aislados y confusiones sistemáticas entre clases concretas.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.60\textwidth]{figures/resultados/confusion_matrix_ttn.png}
+    \caption{Matriz de confusión del mejor modelo tensorial sobre el conjunto de evaluación. La concentración de valores en la diagonal principal indica que la mayoría de los recortes se clasifican correctamente.}
+    \label{fig:confusion_ttn}
+\end{figure}
+
+En conjunto, la matriz de confusión muestra un comportamiento muy concentrado en la diagonal principal, lo que significa que la mayoría de los recortes se clasifican correctamente. Los errores aparecen principalmente entre clases visualmente parecidas o entre objetos cuya forma puede resultar ambigua cuando se observan como recortes individuales. Este efecto es razonable en el contexto de ChemEq25, ya que varias clases corresponden a material de laboratorio con geometrías similares, objetos alargados o recipientes transparentes, donde la información de contexto puede ser importante.
+
+Esta lectura también ayuda a interpretar la diferencia entre la precisión top-1 y la precisión top-5. Aunque el modelo se equivoca en torno al 4\% de los casos cuando solo se considera la clase más probable, la clase correcta aparece entre las cinco opciones más probables en el 99,43\% de los recortes. Por tanto, muchos errores no son predicciones completamente incoherentes, sino confusiones entre clases que el modelo considera cercanas. Esto sugiere que la representación aprendida por la red tensorial organiza razonablemente bien las clases, aunque no siempre separa con suficiente claridad aquellas que son visualmente similares.
+
+\section{Comparación con ResNet50}
+
+Para contextualizar el rendimiento del modelo tensorial, se comparó con ResNet50, una arquitectura de red neuronal convolucional ampliamente utilizada como referencia en tareas de clasificación de imágenes. A diferencia de la red tensorial propuesta, ResNet50 está diseñada específicamente para procesar imágenes mediante convoluciones, es decir, operaciones locales que extraen patrones espaciales como bordes, formas y texturas. Por ello, no se espera necesariamente que el modelo tensorial supere a ResNet50, sino que la comparación sirve para situar su rendimiento frente a una arquitectura estándar y reconocible en visión artificial.
+
+La comparación se realizó en las mismas condiciones de datos. Los tres modelos se entrenaron y evaluaron sobre los mismos recortes de ChemEq25, con las mismas 25 clases y las mismas particiones de entrenamiento, validación y evaluación. De esta forma, la diferencia entre modelos se debe principalmente a la arquitectura utilizada y no a cambios en el conjunto de datos.
+
+Se evaluaron dos versiones de ResNet50. En la primera, todos los parámetros se inicializan de forma aleatoria y el modelo aprende únicamente a partir de ChemEq25. A este caso se le denomina entrenamiento desde cero. En la segunda, se parte de una ResNet50 que ya había sido entrenada previamente sobre ImageNet, un conjunto de imágenes mucho más grande y variado, y después se ajustan sus parámetros al problema concreto de ChemEq25. Este procedimiento se conoce como ajuste fino o \textit{fine-tuning}. La diferencia entre ambos casos es que el modelo entrenado desde cero solo utiliza la información disponible en ChemEq25, mientras que el modelo con ajuste fino aprovecha representaciones visuales aprendidas previamente en otro conjunto de datos.
+
+Los resultados de la comparación se recogen en \tabref{tab:comparacion_resnet}. Además de la precisión top-1 y top-5, se incluye el número aproximado de parámetros entrenables de cada modelo. La precisión top-1 corresponde al porcentaje de recortes en los que la clase más probable predicha por el modelo coincide con la clase real. La precisión top-5 considera correcta la predicción si la clase real aparece entre las cinco clases a las que el modelo asigna mayor probabilidad. En la tabla se muestran los mejores valores registrados para cada modelo, ya que el objetivo es comparar el rendimiento alcanzado por cada arquitectura y no la evolución época a época.
 
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Experimento} & \textbf{Seed} & \textbf{Mejor acc.} & \textbf{Top-5} & \textbf{Macro F1} & \textbf{Acc. final} \\
+\textbf{Modelo} & \textbf{Top-1} & \textbf{Top-5} & \textbf{Parámetros} & \textbf{Observación} \\
 \midrule
-\texttt{20} & 17 & 92,96\% & 98,42\% & 92,88\% & 91,89\% \\
-\texttt{21} & 88 & 93,40\% & 98,78\% & 93,41\% & 92,39\% \\
-\texttt{22} & 123 & 92,25\% & 98,56\% & 92,33\% & 91,17\% \\
-\texttt{23} & 314 & 93,54\% & 98,49\% & 93,57\% & 93,18\% \\
-\midrule
-\textbf{Media} & -- & \textbf{93,04\%} & -- & \textbf{93,05\%} & -- \\
+AIM + \texttt{HybridCustomTTN} & 96,05\% & 99,43\% & $\approx 2,15$ M & Modelo tensorial propuesto \\
+ResNet50 desde cero & 97,27\% & 99,64\% & 23,56 M & Sin pesos previos \\
+ResNet50 con ajuste fino & 99,71\% & 99,86\% & 23,56 M & Con pesos preentrenados \\
 \bottomrule
 \end{tabular}
-\caption{Seed sweep posterior al mejor resultado.}
-\label{tab:seed_sweep}
+\caption{Comparación entre el modelo tensorial propuesto y ResNet50 sobre los mismos recortes de ChemEq25.}
+\label{tab:comparacion_resnet}
 \end{table}
 
-Ninguno de los experimentos superó a \texttt{ChemEq\_exp15}. Todas quedaron entre 92,25\% y 93,54\%, por debajo del mejor experimento del 14 de mayo. Esto muestra que la \textit{seed} tiene un efecto fuerte.
+La tabla anterior resume las diferencias principales entre modelos. Para visualizar mejor la comparación, en la \figref{fig:comparacion_resnet} se muestran por separado el rendimiento en clasificación y el tamaño aproximado de cada arquitectura.
 
-También se probó aumentar la capacidad a \texttt{local\_dim=14} y \texttt{bond\_dim=14}, pero en esa prueba el resultado cayó a 88,16\%. Esto refuerza una idea importante: en este proyecto, más capacidad no siempre significa mejor generalización. Los cambios que más ayudaron fueron los que mejoraron la información visual y la regularización, no simplemente aumentar dimensiones.
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/resultados/comparativa_barras.pdf}
+        \caption{Precisión top-1 y top-5.}
+        \label{fig:comparacion_accuracy}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.47\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/resultados/eficiencia_scatter.pdf}
+        \caption{Precisión frente a número de parámetros.}
+        \label{fig:comparacion_parametros}
+    \end{subfigure}
+    \caption{Comparación entre el modelo tensorial propuesto y ResNet50. En (a) se muestra la precisión top-1 y top-5 alcanzada por cada modelo y en (b) la relación entre la precisión top-1 y el número aproximado de parámetros entrenables.}
+    \label{fig:comparacion_resnet}
+\end{figure}
 
-\section{Resumen de la evolución experimental}
+El mejor resultado absoluto lo obtiene ResNet50 con ajuste fino, alcanzando una precisión top-1 del 99,71\% y una precisión top-5 del 99,86\%. Este resultado es coherente con lo esperado, ya que el modelo, antes de adaptarse a ChemEq25, ya había aprendido representaciones visuales generales en ImageNet. Por tanto, esta comparación no mide únicamente la capacidad de ResNet50 sobre el conjunto ChemEq25, sino también la ventaja que proporciona el aprendizaje previo en un conjunto de datos mucho mayor.
 
-La evolución completa del proyecto se resume en la siguiente tabla:
+La comparación más directa para valorar la arquitectura tensorial es la realizada frente a ResNet50 entrenada desde cero. En este caso, ResNet50 alcanza una precisión top-1 del 97,27\%, mientras que el modelo tensorial obtiene un 96,05\%. La diferencia es de aproximadamente 1,2 puntos porcentuales, por lo que ResNet50 sigue siendo superior en rendimiento absoluto, pero la distancia no es grande. Esto indica que la arquitectura tensorial propuesta es capaz de resolver el problema con una precisión cercana a la de una red convolucional profunda entrenada específicamente sobre los mismos datos.
 
-\begin{table}[H]
-\centering
-\small
-\begin{tabularx}{\textwidth}{lXc}
-\toprule
-\textbf{Fase} & \textbf{Cambio principal} & \textbf{Mejor accuracy} \\
-\midrule
-Flowers, CustomTTN inicial & TTN propia sin transformaciones intermedias & 3,58\% \\
-Flowers, HybridCustomTTN & Transformaciones no lineales entre niveles & 13,60\% \\
-Flowers, AIM + augmentation & Front-end AIM y aumento de datos & 33,96\% \\
-ChemEq25 inicial & Cambio al dataset principal por crops & 57,00\% \\
-ChemEq25 con LR menor & Optimización más estable & 75,23\% \\
-ChemEq25 ajustado & Warmup, 12/12, regularización y label smoothing & 88,94\% \\
-ChemEq25 final & \textit{Data augmentation light} y mejor seed & 96,05\% \\
-\bottomrule
-\end{tabularx}
-\caption{Resumen global de la evolución experimental del proyecto.}
-\label{tab:resumen_evolucion}
-\end{table}
+La diferencia principal aparece al comparar el tamaño de los modelos. ResNet50 tiene aproximadamente 23,56 millones de parámetros, mientras que el modelo tensorial completo tiene alrededor de 2,15 millones. Es decir, la red tensorial utiliza unas once veces menos parámetros que ResNet50. Desde este punto de vista, el resultado es favorable para la propuesta del TFG. Aunque no alcanza la precisión de ResNet50, consigue un rendimiento competitivo con un modelo mucho más pequeño.
 
-La lectura final es que el modelo basado en TN sí consiguió aprender una tarea visual real. El mejor resultado, 96,05\% de accuracy y 95,94\% de macro F1 en ChemEq25, demuestra que la arquitectura AIM + \texttt{HybridCustomTTN} es una alternativa viable para clasificación de imágenes de material de laboratorio.
+Este punto es especialmente relevante porque una de las motivaciones de las \textit{tensor networks} en aprendizaje automático es explorar arquitecturas con una estructura interna más controlada y potencialmente más eficiente en número de parámetros. En este experimento, esa ventaja sí aparece de forma clara en el tamaño del modelo. No obstante, tener menos parámetros no implica automáticamente que el modelo sea mejor en todos los sentidos. También importan otros factores, como el tiempo de entrenamiento, la facilidad de implementación, la estabilidad frente a distintas inicializaciones y la madurez de las herramientas disponibles.
+
+En conjunto, la comparación muestra una conclusión equilibrada. ResNet50, especialmente cuando parte de pesos preentrenados, sigue siendo la opción más potente para este problema de clasificación. Sin embargo, el modelo tensorial desarrollado alcanza una precisión alta y se aproxima al rendimiento de ResNet50 entrenada desde cero utilizando un número de parámetros considerablemente menor. Por tanto, el resultado no demuestra que las redes tensoriales sustituyan a las arquitecturas convolucionales estándar, pero sí muestra que pueden constituir una alternativa competitiva y técnicamente interesante para problemas reales de clasificación de imágenes.
+
+Finalmente, en la \figref{fig:curvas_resnet} se muestra la evolución del entrenamiento de las dos versiones de ResNet50, tanto en términos de pérdida como de precisión. En el caso entrenado desde cero (figuras \ref{fig:resnet_scratch_loss} y \ref{fig:resnet_scratch_accuracy}), la pérdida de entrenamiento desciende de forma progresiva hasta valores muy próximos a cero, mientras que la pérdida de validación se estabiliza en torno a $0,15$; esta separación entre ambas curvas refleja un cierto grado de sobreajuste, esperable al entrenar una red profunda desde cero sobre un conjunto de datos relativamente pequeño. Aun así, la precisión de validación se mantiene estable en torno al $97\%$, lo que indica que el modelo generaliza correctamente. En el caso con ajuste fino (figuras \ref{fig:resnet_pretrained_loss} y \ref{fig:resnet_pretrained_accuracy}), la convergencia es mucho más rápida, ya que en apenas unas pocas épocas el modelo alcanza una precisión de validación cercana al $99,7\%$, lo que evidencia la ventaja de partir de representaciones visuales ya aprendidas en ImageNet.
+
+\begin{figure}[H]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/resultados/resnet_scratch_loss.pdf}
+        \caption{Pérdida, desde cero.}
+        \label{fig:resnet_scratch_loss}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/resultados/resnet_scratch_accuracy.pdf}
+        \caption{Precisión, desde cero.}
+        \label{fig:resnet_scratch_accuracy}
+    \end{subfigure}
+
+    \vspace{0.6em}
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/resultados/resnet_pretrained_loss.pdf}
+        \caption{Pérdida, ajuste fino.}
+        \label{fig:resnet_pretrained_loss}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{figures/resultados/resnet_pretrained_accuracy.pdf}
+        \caption{Precisión, ajuste fino.}
+        \label{fig:resnet_pretrained_accuracy}
+    \end{subfigure}
+    \caption{Evolución del entrenamiento de ResNet50 sobre ChemEq25. Fila superior: modelo entrenado desde cero. Fila inferior: modelo con ajuste fino a partir de pesos preentrenados en ImageNet.}
+    \label{fig:curvas_resnet}
+\end{figure}
